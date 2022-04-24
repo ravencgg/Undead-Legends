@@ -1,0 +1,82 @@
+﻿'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Projects\Project_2_Name_TBD\x64\Debug\Project_2_Name_TBD.exe'. Symbols loaded.
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\ntdll.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\kernel32.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\KernelBase.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\shell32.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\msvcp_win.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\ucrtbase.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\user32.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\win32u.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\gdi32.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\gdi32full.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Projects\Project_2_Name_TBD\SDL2.dll'. Module was built without symbols.
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\advapi32.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\msvcrt.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\sechost.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\rpcrt4.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\imm32.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\ole32.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\combase.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\oleaut32.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\setupapi.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\cfgmgr32.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\bcrypt.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\vcruntime140d.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\ucrtbased.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\version.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\winmm.dll'. 
+The thread 0x6adc has exited with code 0 (0x0).
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\SHCore.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\uxtheme.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\msctf.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\kernel.appcore.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\bcryptprimitives.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\clbcatq.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\TextInputFramework.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\CoreUIComponents.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\CoreMessaging.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\ws2_32.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\ntmarta.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\WinTypes.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\oleacc.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\d3d9.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\dwmapi.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\windows.storage.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\wldp.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\DriverStore\FileRepository\nv_dispi.inf_amd64_31a2adf8c49e7799\nvldumdx.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\msasn1.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\cryptnet.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\crypt32.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\drvstore.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\devobj.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\cryptbase.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\wintrust.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\imagehlp.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\cryptsp.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\rsaenh.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\DriverStore\FileRepository\nv_dispi.inf_amd64_31a2adf8c49e7799\nvd3dumx.dll'. 
+NVD3DREL: GR-805 : DX9 Overlay is DISABLED
+NVD3DREL: GR-805 : DX9 Overlay is DISABLED
+The thread 0x652c has exited with code 0 (0x0).
+NVD3DREL: GR-805 : DX9 Overlay is DISABLED
+NVD3DREL: GR-805 : DX9 Overlay is DISABLED
+NVD3DREL: GR-805 : DX9 Overlay is DISABLED
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\ResourcePolicyClient.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Unloaded 'C:\Windows\System32\ResourcePolicyClient.dll'
+NVD3DREL: GR-805 : DX9 Overlay is DISABLED
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\shlwapi.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\nvspcap64.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\profapi.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\gpapi.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\DriverStore\FileRepository\nv_dispi.inf_amd64_31a2adf8c49e7799\NvCamera\NvCameraAllowlisting64.dll'. 
+'Project_2_Name_TBD.exe' (Win32): Unloaded 'C:\Windows\System32\DriverStore\FileRepository\nv_dispi.inf_amd64_31a2adf8c49e7799\NvCamera\NvCameraAllowlisting64.dll'
+'Project_2_Name_TBD.exe' (Win32): Loaded 'C:\Windows\System32\DXCore.dll'. 
+The thread 0x24a8 has exited with code 0 (0x0).
+The thread 0x5734 has exited with code 0 (0x0).
+The thread 0x69f4 has exited with code 0 (0x0).
+The thread 0x6720 has exited with code 0 (0x0).
+The thread 0x6af0 has exited with code 0 (0x0).
+The thread 0x4dd4 has exited with code 0 (0x0).
+The thread 0x2c90 has exited with code 0 (0x0).
+The thread 0x6884 has exited with code 0 (0x0).
+The program '[13404] Project_2_Name_TBD.exe' has exited with code 0 (0x0).
