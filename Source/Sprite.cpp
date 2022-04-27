@@ -206,6 +206,10 @@ void updateSpritePosition(Sprite* sprite, double delta) {
 	sprite->position.y += sprite->velocity.y * delta;
 }
 
+float dotProduct(Vector a, Vector b) {
+	return a.x * b.x + a.y * b.y;
+}
+
 void updateEnemyPosition(Character* player, Enemy* enemy, double delta) {
 	// Direction you want to acclerate in
 	Vector enemyToPlayer = player->sprite.position - enemy->sprite.position;
@@ -221,10 +225,12 @@ void updateEnemyPosition(Character* player, Enemy* enemy, double delta) {
 	Vector updatedVelocity = enemy->velocity + (enemyAcceleration * delta);
 	double currentLength = sqrt(updatedVelocity.x * updatedVelocity.x + updatedVelocity.y * updatedVelocity.y);
 	if (currentLength > ENEMY_SPEED) {
-		updatedVelocity.x /= currentLength;
-		updatedVelocity.y /= currentLength;
+		if (dotProduct(updatedVelocity, enemyAcceleration) > 0) {
+			updatedVelocity.x /= currentLength;
+			updatedVelocity.y /= currentLength;
 
-		updatedVelocity *= ENEMY_SPEED;
+			updatedVelocity *= ENEMY_SPEED;
+		}
 	}
 	// x = x0 + v0t
 	Vector updatedPosition = enemy->sprite.position + (updatedVelocity * delta);
@@ -252,7 +258,7 @@ void createEnemy(Image image, Vector position, GameData* gameData, int healthPoi
 	enemy.sprite.position = position;
 	enemy.healthPoints = healthPoints;
 	enemy.damage = damage;
-	enemy.timeUntilDamage;
+	enemy.timeUntilDamage = 0;
 	gameData->enemies.push_back(enemy);
 }
 

@@ -4,7 +4,7 @@
 const int RESOLUTION_X = 1600;
 const int RESOLUTION_Y = 900;
 const double ENEMY_SPEED = 50;
-const double ENEMY_ACCELERATION = 250;
+const double ENEMY_ACCELERATION = 2500;
 
 // Extern says this exists but the linker has to
 // find out where it is. Bad practice!! Pass through
@@ -101,6 +101,8 @@ Character createCharacter(Image image, int healthPoints);
 float randomFloat(float min, float max);
 
 void updateSpritePosition(Sprite* sprite, double delta);
+
+float dotProduct(Vector a, Vector b);
 
 void updateEnemyPosition(Character* player, Enemy* enemy, double delta);
 

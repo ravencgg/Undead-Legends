@@ -10,8 +10,11 @@
 // DONE: Player collision with enemies (reuse from bullet)
 // DONE: Add enemy health
 // DONE: Add player health // Currently, the enemies do a small amount of damage really fast
-// TODO: Enemies don't collide (push eachother away)
-// TODO: Enemies get pushed back when hit if the bullet doesn't kill them
+// DONE: Enemies get pushed back when hit if the bullet doesn't kill them
+// TODO: Enemies don't collide (push eachother away) // Have every enemy push every other 
+// enemy away (set velocity or position)
+// TODO: Make hitbox smaller
+// TODO: Potentially impliment the normalize function
 // TODO: Randomly spawn enemies around player / off screen?
 
 bool running = true;
@@ -20,7 +23,7 @@ bool down = false;
 bool left = false;
 bool right = false;
 double fireTime = 0;
-double ATTACKSPEED = .50;
+double ATTACKSPEED = .1;
 double PROJECTILESPEED = 250;
 
 int main(int argc, char** argv) {
@@ -148,10 +151,30 @@ int main(int argc, char** argv) {
 			gameData.player.sprite.position.y -= speed;
 		}
 
+		// What is the first thing I should do?
+		// 1: Check to see if the enemies are colliding with eachother
+
 		if (gameData.player.healthPoints > 0) {
-			for (int i = 0; i < gameData.enemies.size(); i++) {
-				// float randomNumber = randomFloat(-80, 80);
+			for (int i = 0; i < gameData.enemies.size(); i++) {			
 				updateEnemyPosition(&gameData.player, &gameData.enemies[i], deltaTime);
+				for (int j = 0; j < gameData.enemies.size(); j++) {
+					if (j == i) {
+						continue;
+					}
+					else {
+						// Length
+						double distanceBetween = distance(gameData.enemies[i].sprite.position, gameData.enemies[j].sprite.position);
+						double radiusSum = gameData.enemies[i].radius + gameData.enemies[j].radius;
+						if (distanceBetween < radiusSum) {
+							Vector offset = gameData.enemies[j].sprite.position - gameData.enemies[i].sprite.position;
+							// This is equivalent to offset / length
+							offset *= 1 / distanceBetween;							
+							offset *= radiusSum;
+							gameData.enemies[j].sprite.position = offset + gameData.enemies[i].sprite.position;
+						}
+						// float randomNumber = randomFloat(-80, 80);
+					}
+				}
 			}
 		}
 
@@ -200,7 +223,7 @@ int main(int argc, char** argv) {
 						double length = sqrt(gameData.enemies[j].velocity.x * gameData.enemies[j].velocity.x + gameData.enemies[j].velocity.y * gameData.enemies[j].velocity.y);
 						gameData.enemies[j].velocity.x /= length;
 						gameData.enemies[j].velocity.y /= length;
-						gameData.enemies[j].velocity = gameData.enemies[j].velocity * 10000;
+						gameData.enemies[j].velocity = gameData.enemies[j].velocity * 600;
 						break;
 					}
 				}
@@ -222,7 +245,7 @@ int main(int argc, char** argv) {
 					double distanceBetween = distance(gameData.player.sprite.position, gameData.enemies[i].sprite.position);
 					double radiusSum = gameData.player.radius + gameData.enemies[i].radius;
 					if (distanceBetween < radiusSum) {
-						// gameData.player.healthPoints -= gameData.enemies[i].damage;
+						gameData.player.healthPoints -= gameData.enemies[i].damage;
 						playerTakingDamage = true;
 						gameData.enemies[i].timeUntilDamage = .1;
 					}
