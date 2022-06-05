@@ -1,21 +1,22 @@
 #include "SDL.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-// C's standard io. Used for sending errors for console.
 #include <stdio.h>
 #include "Sprite.h"
 #include <algorithm>
 
-// DONE: Bullet collision detection with enemies
-// DONE: Player collision with enemies (reuse from bullet)
-// DONE: Add enemy health
-// DONE: Add player health // Currently, the enemies do a small amount of damage really fast
-// DONE: Enemies get pushed back when hit if the bullet doesn't kill them
-// TODO: Enemies don't collide (push eachother away) // Have every enemy push every other 
-// enemy away (set velocity or position)
-// TODO: Make hitbox smaller
-// TODO: Potentially impliment the normalize function
-// TODO: Randomly spawn enemies around player / off screen?
+// DONE: Make hitbox smaller of enemies
+// DONE: Make hitbox of player smaller (distancePlayer / drawCirclePlayer function - offset by 20 pixels)
+// DONE: Randomly spawn enemies around player / off screen?
+// TODO: Visible player health and enemy health on collision with bullet
+// TODO: Respawning enemies
+// TODO: Enemies spawning in more of waves / groups
+// TODO: Adding player, enemy, weapon variety (Possibly through arrays or vectors)
+// TODO: Add a map
+// TODO: Enemies drop experience
+// TODO: Items / experience that can be picked up by the player
+// TODO: Text rendering
+// TODO: Menu
 
 bool running = true;
 bool up = false;
@@ -23,7 +24,7 @@ bool down = false;
 bool left = false;
 bool right = false;
 double fireTime = 0;
-double ATTACKSPEED = .1;
+double ATTACKSPEED = 20;
 double PROJECTILESPEED = 250;
 
 int main(int argc, char** argv) {
@@ -56,14 +57,32 @@ int main(int argc, char** argv) {
 	GameData gameData;
 
 	gameData.player = createCharacter(characterA, 100);
-	
-	for (int i = 0; i < 50; i++) {
-		double range = randomFloat((RESOLUTION_X / 5), RESOLUTION_X / 2);
+
+	gameData.player.position.x = RESOLUTION_X / 2;
+	gameData.player.position.y = RESOLUTION_Y / 2;
+
+	int spawnAmount = 50;
+	const float DELTA = (M_PI * 2) / spawnAmount;
+	int distanceR = 300;
+
+	// Exercise: Spawning enemies in a circle around player
+	/*
+	for (int i = 0; i < SPAWNAMOUNT; i++) {
+		Vector enemyPosition = {};
+		enemyPosition.x = gameData.player.position.x + cos(DELTA * i) * distanceR;
+		enemyPosition.y = gameData.player.position.y + sin(DELTA * i) * distanceR;
+			
+		createEnemy(enemyA, enemyPosition, &gameData, 100, 2);
+	}
+	*/
+
+	for (int i = 0; i < spawnAmount; i++) {
+		double range = randomFloat(RESOLUTION_X / 2, RESOLUTION_X);
 		Vector enemyPosition = facingDirection(randomFloat(0, 360));
-		
+
 		enemyPosition.x *= range;
 		enemyPosition.y *= range;
-		
+
 		enemyPosition.x += RESOLUTION_X / 2;
 		enemyPosition.y += RESOLUTION_Y / 2;
 
@@ -80,11 +99,6 @@ int main(int argc, char** argv) {
 
 	double lastFrameTime = getTime();
 
-
-	gameData.player.sprite.position.x = RESOLUTION_X / 2;
-	gameData.player.sprite.position.y = RESOLUTION_Y / 2;
-
-	// Game Loop
  	while (running) {
 		// How many miliseconds it's been since we first
 		frameStart = SDL_GetTicks();
@@ -139,22 +153,20 @@ int main(int argc, char** argv) {
 		double speed = 2;
 
 		if (left) {
-			gameData.player.sprite.position.x -= speed;
+			gameData.player.position.x -= speed;
 		}
 		if (right) {
-			gameData.player.sprite.position.x += speed;
+			gameData.player.position.x += speed;
 		}
 		if (down) {
-			gameData.player.sprite.position.y += speed;
+			gameData.player.position.y += speed;
 		}
 		if (up) {
-			gameData.player.sprite.position.y -= speed;
+			gameData.player.position.y -= speed;
 		}
 
-		// What is the first thing I should do?
 		// 1: Check to see if the enemies are colliding with eachother
-
-		if (gameData.player.healthPoints > 0) {
+		if (gameData.player.hp > 0) {
 			for (int i = 0; i < gameData.enemies.size(); i++) {			
 				updateEnemyPosition(&gameData.player, &gameData.enemies[i], deltaTime);
 				for (int j = 0; j < gameData.enemies.size(); j++) {
@@ -163,14 +175,14 @@ int main(int argc, char** argv) {
 					}
 					else {
 						// Length
-						double distanceBetween = distance(gameData.enemies[i].sprite.position, gameData.enemies[j].sprite.position);
+						double distanceBetween = distance(gameData.enemies[i].position, gameData.enemies[j].position);
 						double radiusSum = gameData.enemies[i].radius + gameData.enemies[j].radius;
 						if (distanceBetween < radiusSum) {
-							Vector offset = gameData.enemies[j].sprite.position - gameData.enemies[i].sprite.position;
+							Vector offset = gameData.enemies[j].position - gameData.enemies[i].position;
 							// This is equivalent to offset / length
 							offset *= 1 / distanceBetween;							
 							offset *= radiusSum;
-							gameData.enemies[j].sprite.position = offset + gameData.enemies[i].sprite.position;
+							gameData.enemies[j].position = offset + gameData.enemies[i].position;
 						}
 						// float randomNumber = randomFloat(-80, 80);
 					}
@@ -180,26 +192,26 @@ int main(int argc, char** argv) {
 
 		// Update weapon position
 		for (int i = 0; i < gameData.weaponSpike.size(); i++) {
-			updateSpritePosition(&gameData.weaponSpike[i].sprite, deltaTime);
+			updateEntityPosition(&gameData.weaponSpike[i], deltaTime);
 		}
 
 		// Weapon spike firing at nearest enemies
 		// Check if the player is existing
-		if (gameData.player.healthPoints > 0) {
+		if (gameData.player.hp > 0) {
 			if (fireTime <= 0) {
 				// Find the closest enemy
 				int nearestEnemy = closestEnemy(gameData.player, &gameData);
 				if (nearestEnemy >= 0) {
 					Weapon weaponSpike = createWeapon(weaponSpikeImage, 50);
-					weaponSpike.sprite.position = gameData.player.sprite.position;
+					weaponSpike.position = gameData.player.position;
 					// Vector spikeDirection = facingDirection(weaponSpikeArray[i].sprite.angle);
 					Vector offset = {};
 					// Calculates the vector from the player to the enemy (enemy <--- player)
-					offset = gameData.enemies[nearestEnemy].sprite.position - gameData.player.sprite.position;
-					weaponSpike.sprite.velocity = normalize(offset);
-					weaponSpike.sprite.velocity *= PROJECTILESPEED;
+					offset = gameData.enemies[nearestEnemy].position - gameData.player.position;
+					weaponSpike.velocity = normalize(offset);
+					weaponSpike.velocity *= PROJECTILESPEED;
 					fireTime = ATTACKSPEED;
-					weaponSpike.sprite.angle = angleFromDirection(weaponSpike.sprite.velocity);
+					weaponSpike.angle = angleFromDirection(weaponSpike.velocity);
 					gameData.weaponSpike.push_back(weaponSpike);
 				}
 			}
@@ -208,18 +220,18 @@ int main(int argc, char** argv) {
 		// Weapon collision with enemy
 		for (int i = 0; i < gameData.weaponSpike.size(); i++) {
 			for (int j = 0; j < gameData.enemies.size(); j++) {
-				double distanceBetween = distance(gameData.weaponSpike[i].sprite.position, gameData.enemies[j].sprite.position);
+				double distanceBetween = distance(gameData.weaponSpike[i].position, gameData.enemies[j].position);
 				double radiusSum = gameData.weaponSpike[i].radius + gameData.enemies[j].radius;
 				if (distanceBetween < radiusSum) {
-					if (gameData.enemies[j].healthPoints > 0) {
-						gameData.enemies[j].healthPoints -= gameData.weaponSpike[i].damage;
+					if (gameData.enemies[j].hp > 0) {
+						gameData.enemies[j].hp -= gameData.weaponSpike[i].damage;
 						gameData.weaponSpike[i].lifeTime = 0;
-						if (gameData.enemies[j].healthPoints <= 0) {
+						if (gameData.enemies[j].hp <= 0) {
 							gameData.enemies[j].destroyed = true;						
 						}
 
 						// Knock back enemies
-						gameData.enemies[j].velocity = gameData.weaponSpike[i].sprite.velocity;
+						gameData.enemies[j].velocity = gameData.weaponSpike[i].velocity;
 						double length = sqrt(gameData.enemies[j].velocity.x * gameData.enemies[j].velocity.x + gameData.enemies[j].velocity.y * gameData.enemies[j].velocity.y);
 						gameData.enemies[j].velocity.x /= length;
 						gameData.enemies[j].velocity.y /= length;
@@ -239,19 +251,21 @@ int main(int argc, char** argv) {
 		}
 
 		// Player collision with enemy
-		if (gameData.player.healthPoints > 0) {
+		if (gameData.player.hp > 0) {
 			for (int i = 0; i < gameData.enemies.size(); i++) {
 				if (gameData.enemies[i].timeUntilDamage <= 0) {
-					double distanceBetween = distance(gameData.player.sprite.position, gameData.enemies[i].sprite.position);
+					double distanceBetween = distancePlayer(gameData.player.position, gameData.enemies[i].position);
 					double radiusSum = gameData.player.radius + gameData.enemies[i].radius;
 					if (distanceBetween < radiusSum) {
-						gameData.player.healthPoints -= gameData.enemies[i].damage;
+						gameData.player.hp -= gameData.enemies[i].damage;
 						playerTakingDamage = true;
 						gameData.enemies[i].timeUntilDamage = .1;
 					}
 				}
 			}
 		}
+
+		gameData.camera = gameData.player.position;
 
 		// SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
 		// Clear what we are drawing to
@@ -261,25 +275,25 @@ int main(int argc, char** argv) {
 
 		// This makes it so the character is no longer draw to the screen
 		// but the character still exists
-		if (gameData.player.healthPoints > 0) {
-			drawSprite(renderer, gameData.player.sprite);
+		if (gameData.player.hp > 0) {
+			drawEntity(renderer, gameData.player);
 			if (playerTakingDamage) {
 				SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-				drawCircle(renderer, gameData.player.sprite.position, gameData.player.radius);
+				drawCirclePlayer(renderer, gameData.player.position, gameData.player.radius);
 			}
 		}
 
 		// Draw enemies
 		for (int i = 0; i < gameData.enemies.size(); i++) {
 			// Check to see if the boolean value is true when the enemy was created. If it was, draw it.
-			drawSprite(renderer, gameData.enemies[i].sprite);
+			drawEntity(renderer, gameData.enemies[i]);
 			// SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
 			// drawCircle(renderer, enemy[i].sprite.position, enemy[i].radius);
 		}
 
 		// Draw bullets
 		for (int i = 0; i < gameData.weaponSpike.size(); i++) {
-			drawSprite(renderer, gameData.weaponSpike[i].sprite);
+			drawEntity(renderer, gameData.weaponSpike[i]);
 			gameData.weaponSpike[i].lifeTime -= deltaTime;
 			//SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
 			//drawCircle(renderer, weaponSpikeArray[i].sprite.position, weaponSpikeArray[i].radius);

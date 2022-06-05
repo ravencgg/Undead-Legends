@@ -112,9 +112,20 @@ Color readPixel(Image image, int x, int y) {
 
 double distance(Vector a, Vector b) {
 	Vector to_a = {};
+	// Calculate the offset
 	to_a.x = a.x - b.x;
 	to_a.y = a.y - b.y;
+	// Calculate the length
+	double result = sqrt(to_a.x * to_a.x + to_a.y * to_a.y);
+	return result;
+}
 
+double distancePlayer(Vector a, Vector b) {
+	Vector to_a = {};
+	// Calculate the offset
+	to_a.x = a.x - b.x;
+	to_a.y = (a.y + 20) - b.y;
+	// Calculate the length
 	double result = sqrt(to_a.x * to_a.x + to_a.y * to_a.y);
 	return result;
 }
@@ -187,23 +198,34 @@ double returnSpriteSize(Image image) {
 Character createCharacter(Image image, int healthPoints) {
 	Character character = {};
 	character.sprite = createSprite(image);
-	character.radius = returnSpriteSize(image);
-	character.healthPoints = healthPoints;
+	character.radius = returnSpriteSize(image) / 2;
+	character.hp = healthPoints;
 	return character;
 }
 
 float randomFloat(float min, float max) {
+	// Gives us a random percentage
+	float base = (float)rand() / (float)RAND_MAX;
+	// 
+	float range = max - min;
+	float newRange = range * base + min;
+	return newRange;
+}
+
+// Test function
+float randomFloatScreen(float min, float max) {
+	// Gives us a random percentage
 	float base = (float)rand() / (float)RAND_MAX;
 	float range = max - min;
 	float newRange = range * base + min;
 	return newRange;
 }
 
-void updateSpritePosition(Sprite* sprite, double delta) {
+void updateEntityPosition(Entity* entity, double delta) {
 	// This is where the player exists in the world at this frame
 	// -> is short hand for dereferencing a member out of a pointer
-	sprite->position.x += sprite->velocity.x * delta;
-	sprite->position.y += sprite->velocity.y * delta;
+	entity->position.x += entity->velocity.x * delta;
+	entity->position.y += entity->velocity.y * delta;
 }
 
 float dotProduct(Vector a, Vector b) {
@@ -212,7 +234,7 @@ float dotProduct(Vector a, Vector b) {
 
 void updateEnemyPosition(Character* player, Enemy* enemy, double delta) {
 	// Direction you want to acclerate in
-	Vector enemyToPlayer = player->sprite.position - enemy->sprite.position;
+	Vector enemyToPlayer = player->position - enemy->position;
 	
 	// Normalize to 1
 	double length = sqrt(enemyToPlayer.x * enemyToPlayer.x + enemyToPlayer.y * enemyToPlayer.y);
@@ -233,30 +255,30 @@ void updateEnemyPosition(Character* player, Enemy* enemy, double delta) {
 		}
 	}
 	// x = x0 + v0t
-	Vector updatedPosition = enemy->sprite.position + (updatedVelocity * delta);
+	Vector updatedPosition = enemy->position + (updatedVelocity * delta);
 	
 	enemy->velocity = updatedVelocity;
-	enemy->sprite.position = updatedPosition;
+	enemy->position = updatedPosition;
 }
 
-void drawSprite(SDL_Renderer* renderer, Sprite sprite) {
+void drawEntity(SDL_Renderer* renderer, Entity &entity) {
 	SDL_Rect rect;
 	// rect.x and y is an int. It is truncating the double when it is cast to an int -> (int)
-	rect.w = sprite.width;
-	rect.h = sprite.height;
-	rect.x = (int)sprite.position.x - rect.w / 2;
-	rect.y = (int)sprite.position.y - rect.h / 2;
+	rect.w = entity.sprite.width;
+	rect.h = entity.sprite.height;
+	rect.x = (int)entity.position.x - rect.w / 2;
+	rect.y = (int)entity.position.y - rect.h / 2;
 
-	SDL_RenderCopyEx(renderer, sprite.image.texture, NULL, &rect, sprite.angle, NULL, SDL_FLIP_NONE);
+	SDL_RenderCopyEx(renderer, entity.sprite.image.texture, NULL, &rect, entity.angle, NULL, SDL_FLIP_NONE);
 }
 
 // Adds one enemy into the world
 void createEnemy(Image image, Vector position, GameData* gameData, int healthPoints, int damage) {
 	Enemy enemy = {};
-	enemy.radius = returnSpriteSize(image);
+	enemy.radius = returnSpriteSize(image) / 2;
 	enemy.sprite = createSprite(image);
-	enemy.sprite.position = position;
-	enemy.healthPoints = healthPoints;
+	enemy.position = position;
+	enemy.hp = healthPoints;
 	enemy.damage = damage;
 	enemy.timeUntilDamage = 0;
 	gameData->enemies.push_back(enemy);
@@ -275,7 +297,7 @@ int closestEnemy(Character player, GameData* gameData) {
 	double closestDistance = DBL_MAX;
 	int index = -1;
 	for (int i = 0; i < gameData->enemies.size(); i++) {
-		double distanceBetween = distance(player.sprite.position, gameData->enemies[i].sprite.position);
+		double distanceBetween = distance(player.position, gameData->enemies[i].position);
 		if (distanceBetween < closestDistance) {
 			closestDistance = distanceBetween;
 			index = i;
@@ -299,6 +321,27 @@ void drawCircle(SDL_Renderer* renderer, Vector position, float radius) {
 		// Where we are drawing to
 		float x2 = position.x + cos(DELTA * (i + 1)) * radius;
 		float y2 = position.y + sin(DELTA * (i + 1)) * radius;
+		// Draw the line
+		SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
+	}
+
+}
+
+void drawCirclePlayer(SDL_Renderer* renderer, Vector position, float radius) {
+	// We are going through the C runtime library so we need to be talking in terms of radians
+	// SDL talks in terms of degrees
+	const int NUMPOINTS = 24;
+	const float DELTA = (M_PI * 2) / NUMPOINTS;
+
+
+	// 24 is 1 less of the number of lines we need to draw so add one
+	for (int i = 0; i < NUMPOINTS + 1; i++) {
+		// Where we are starting to draw
+		float x1 = position.x + cos(DELTA * i) * radius;
+		float y1 = (position.y + 20) + sin(DELTA * i) * radius;
+		// Where we are drawing to
+		float x2 = position.x + cos(DELTA * (i + 1)) * radius;
+		float y2 = (position.y + 20)+ sin(DELTA * (i + 1)) * radius;
 		// Draw the line
 		SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
 	}
