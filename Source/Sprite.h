@@ -73,9 +73,19 @@ struct Weapon : Entity {
 	int			damage;
 };
 
+struct Camera {
+	Vector				position;
+};
+
+struct Renderer {
+	
+};
+
 struct GameData {
+	SDL_Renderer*		renderer;
+
 	Character			player;
-	Vector				camera;
+	Camera				camera;
 	std::vector<Enemy>	enemies;
 	std::vector<Weapon> weaponSpike;
 };
@@ -106,7 +116,9 @@ float dotProduct(Vector a, Vector b);
 
 void updateEnemyPosition(Character* player, Enemy* enemy, double delta);
 
-void drawEntity(SDL_Renderer* renderer, Entity& entity);
+SDL_Rect convertCameraSpace(Camera& camera, SDL_Rect worldSpace);
+
+void drawEntity(GameData& gameData, Entity& entity);
 
 void createEnemy(Image image, Vector position, GameData* gameData, int healthPoints, int damage);
 
@@ -114,6 +126,5 @@ Weapon createWeapon(Image image, int damage);
 
 int closestEnemy(Character player, GameData* gameData);
 
-void drawCircle(SDL_Renderer* renderer, Vector position, float radius);
-
-void drawCirclePlayer(SDL_Renderer* renderer, Vector position, float radius);
+// Circle offset doesn't make sense
+void drawCircle(GameData& gameData, Vector position, float radius, int circleOffsetY);

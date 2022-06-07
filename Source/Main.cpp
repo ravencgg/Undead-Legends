@@ -56,6 +56,8 @@ int main(int argc, char** argv) {
 	// Vectors initialize themselves in the constructor
 	GameData gameData;
 
+	gameData.renderer = renderer;
+
 	gameData.player = createCharacter(characterA, 100);
 
 	gameData.player.position.x = RESOLUTION_X / 2;
@@ -265,7 +267,7 @@ int main(int argc, char** argv) {
 			}
 		}
 
-		gameData.camera = gameData.player.position;
+		gameData.camera.position = gameData.player.position;
 
 		// SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
 		// Clear what we are drawing to
@@ -276,24 +278,24 @@ int main(int argc, char** argv) {
 		// This makes it so the character is no longer draw to the screen
 		// but the character still exists
 		if (gameData.player.hp > 0) {
-			drawEntity(renderer, gameData.player);
+			drawEntity(gameData, gameData.player);
 			if (playerTakingDamage) {
 				SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-				drawCirclePlayer(renderer, gameData.player.position, gameData.player.radius);
+				drawCircle(gameData, gameData.player.position, gameData.player.radius, -20);
 			}
 		}
 
 		// Draw enemies
 		for (int i = 0; i < gameData.enemies.size(); i++) {
 			// Check to see if the boolean value is true when the enemy was created. If it was, draw it.
-			drawEntity(renderer, gameData.enemies[i]);
+			drawEntity(gameData, gameData.enemies[i]);
 			// SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
 			// drawCircle(renderer, enemy[i].sprite.position, enemy[i].radius);
 		}
 
 		// Draw bullets
 		for (int i = 0; i < gameData.weaponSpike.size(); i++) {
-			drawEntity(renderer, gameData.weaponSpike[i]);
+			drawEntity(gameData, gameData.weaponSpike[i]);
 			gameData.weaponSpike[i].lifeTime -= deltaTime;
 			//SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
 			//drawCircle(renderer, weaponSpikeArray[i].sprite.position, weaponSpikeArray[i].radius);

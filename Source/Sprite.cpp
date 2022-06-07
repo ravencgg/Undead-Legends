@@ -261,13 +261,34 @@ void updateEnemyPosition(Character* player, Enemy* enemy, double delta) {
 	enemy->position = updatedPosition;
 }
 
-void drawEntity(SDL_Renderer* renderer, Entity &entity) {
+SDL_Rect convertCameraSpace(Camera& camera, SDL_Rect worldSpace) {
+	SDL_Rect cameraSpace;
+	cameraSpace.w = worldSpace.w;
+	cameraSpace.h = worldSpace.h;
+
+	Vector toCenter = { RESOLUTION_X / 2.0f, RESOLUTION_Y / 2.0f };
+
+	Vector worldSpaceV = { worldSpace.x, worldSpace.y };
+
+	Vector offset = worldSpaceV - camera.position;
+
+	offset = offset + toCenter;
+	cameraSpace.x = (int)offset.x - cameraSpace.w / 2;
+	cameraSpace.y = (int)offset.y - cameraSpace.h / 2;
+	
+	return cameraSpace;
+}
+
+void drawEntity(GameData& gameData, Entity &entity) {
+	SDL_Renderer* renderer = gameData.renderer;
 	SDL_Rect rect;
 	// rect.x and y is an int. It is truncating the double when it is cast to an int -> (int)
 	rect.w = entity.sprite.width;
 	rect.h = entity.sprite.height;
-	rect.x = (int)entity.position.x - rect.w / 2;
-	rect.y = (int)entity.position.y - rect.h / 2;
+	rect.x = entity.position.x;
+	rect.y = entity.position.y;
+
+	rect = convertCameraSpace(gameData.camera, rect);
 
 	SDL_RenderCopyEx(renderer, entity.sprite.image.texture, NULL, &rect, entity.angle, NULL, SDL_FLIP_NONE);
 }
@@ -306,44 +327,32 @@ int closestEnemy(Character player, GameData* gameData) {
 	return index;
 }
 
-void drawCircle(SDL_Renderer* renderer, Vector position, float radius) {
+void drawCircle(GameData& gameData, Vector position, float radius, int circleOffsetY) {
 	// We are going through the C runtime library so we need to be talking in terms of radians
 	// SDL talks in terms of degrees
 	const int NUMPOINTS = 24;
 	const float DELTA = (M_PI * 2) / NUMPOINTS;
 
-
 	// 24 is 1 less of the number of lines we need to draw so add one
 	for (int i = 0; i < NUMPOINTS + 1; i++) {
 		// Where we are starting to draw
 		float x1 = position.x + cos(DELTA * i) * radius;
-		float y1 = position.y + sin(DELTA * i) * radius;
+		float y1 = (position.y - circleOffsetY) + sin(DELTA * i) * radius;
 		// Where we are drawing to
 		float x2 = position.x + cos(DELTA * (i + 1)) * radius;
-		float y2 = position.y + sin(DELTA * (i + 1)) * radius;
-		// Draw the line
-		SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
+		float y2 = (position.y - circleOffsetY) + sin(DELTA * (i + 1)) * radius;
+		
+		SDL_Rect rectangle1 = {};
+		rectangle1.x = x1;
+		rectangle1.y = y1;
+		rectangle1 = convertCameraSpace(gameData.camera, rectangle1);
+
+		SDL_Rect rectangle2 = {};
+		rectangle2.x = x2;
+		rectangle2.y = y2;
+		rectangle2 = convertCameraSpace(gameData.camera, rectangle2);
+
+		SDL_RenderDrawLine(gameData.renderer, rectangle1.x, rectangle1.y, rectangle2.x, rectangle2.y);
+	
 	}
-
-}
-
-void drawCirclePlayer(SDL_Renderer* renderer, Vector position, float radius) {
-	// We are going through the C runtime library so we need to be talking in terms of radians
-	// SDL talks in terms of degrees
-	const int NUMPOINTS = 24;
-	const float DELTA = (M_PI * 2) / NUMPOINTS;
-
-
-	// 24 is 1 less of the number of lines we need to draw so add one
-	for (int i = 0; i < NUMPOINTS + 1; i++) {
-		// Where we are starting to draw
-		float x1 = position.x + cos(DELTA * i) * radius;
-		float y1 = (position.y + 20) + sin(DELTA * i) * radius;
-		// Where we are drawing to
-		float x2 = position.x + cos(DELTA * (i + 1)) * radius;
-		float y2 = (position.y + 20)+ sin(DELTA * (i + 1)) * radius;
-		// Draw the line
-		SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
-	}
-
 }
