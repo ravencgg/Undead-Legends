@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "Sprite.h"
 #include <algorithm>
+#include <vector>
 
 // DONE: Make hitbox smaller of enemies
 // DONE: Make hitbox of player smaller (distancePlayer / drawCirclePlayer function - offset by 20 pixels)
@@ -24,8 +25,8 @@ bool down = false;
 bool left = false;
 bool right = false;
 double fireTime = 0;
-double ATTACKSPEED = 20;
-double PROJECTILESPEED = 250;
+double ATTACKSPEED = .1;
+double PROJECTILESPEED = 500;
 
 int main(int argc, char** argv) {
 
@@ -53,30 +54,21 @@ int main(int argc, char** argv) {
 	Image enemyA = loadImage(renderer, "Assets/Enemy_VampireBat_1.png");
 	Image weaponSpikeImage = loadImage(renderer, "Assets/Weapon_Spike_1.png");
 
-	// Vectors initialize themselves in the constructor
 	GameData gameData;
 
 	gameData.renderer = renderer;
 
 	gameData.player = createCharacter(characterA, 100);
-
 	gameData.player.position.x = RESOLUTION_X / 2;
 	gameData.player.position.y = RESOLUTION_Y / 2;
+
+	gameData.tileTypeArray[TILE_GRASS] = loadImage(renderer, "Assets/grassTile.png");
+	gameData.tileTypeArray[TILE_DIRT] = loadImage(renderer, "Assets/dirtTile.png");
+	gameData.tileTypeArray[TILE_ROCK] = loadImage(renderer, "Assets/rockTile.png");
 
 	int spawnAmount = 50;
 	const float DELTA = (M_PI * 2) / spawnAmount;
 	int distanceR = 300;
-
-	// Exercise: Spawning enemies in a circle around player
-	/*
-	for (int i = 0; i < SPAWNAMOUNT; i++) {
-		Vector enemyPosition = {};
-		enemyPosition.x = gameData.player.position.x + cos(DELTA * i) * distanceR;
-		enemyPosition.y = gameData.player.position.y + sin(DELTA * i) * distanceR;
-			
-		createEnemy(enemyA, enemyPosition, &gameData, 100, 2);
-	}
-	*/
 
 	for (int i = 0; i < spawnAmount; i++) {
 		double range = randomFloat(RESOLUTION_X / 2, RESOLUTION_X);
@@ -100,6 +92,9 @@ int main(int argc, char** argv) {
 	int frameTime;
 
 	double lastFrameTime = getTime();
+
+	int wCameraSpace = 0;
+	int hCameraSpace = 0;
 
  	while (running) {
 		// How many miliseconds it's been since we first
@@ -151,7 +146,7 @@ int main(int argc, char** argv) {
 		lastFrameTime = currentTime;
 
 		fireTime -= deltaTime;
-
+		
 		double speed = 2;
 
 		if (left) {
@@ -267,6 +262,8 @@ int main(int argc, char** argv) {
 			}
 		}
 
+		// updateTilePosition
+
 		gameData.camera.position = gameData.player.position;
 
 		// SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
@@ -275,8 +272,21 @@ int main(int argc, char** argv) {
 		SDL_RenderClear(renderer);
 		SDL_RenderCopy(renderer, mapA.texture, NULL, NULL);
 
-		// This makes it so the character is no longer draw to the screen
-		// but the character still exists
+		int playerPositionX = gameData.player.position.x;
+		int playerPositionY = gameData.player.position.y;
+
+		for (int w = 0; w < (RESOLUTION_X / TILE_SIZE) + 2; w++) {
+			for (int h = 0; h < (RESOLUTION_Y / TILE_SIZE) + 2; h++) {
+				Tile tile = {};
+				double offsetX = gameData.camera.position.x - (RESOLUTION_X / 2);
+				double offsetY = gameData.camera.position.y - (RESOLUTION_Y / 2);
+				tile.position.x = (w * (double) TILE_SIZE) + (floor(offsetX / TILE_SIZE) * TILE_SIZE);
+				tile.position.y = (h * (double) TILE_SIZE) + (floor(offsetY / TILE_SIZE) * TILE_SIZE);
+				tile.tileType = (TileType)abs((int)(tile.position.x / TILE_SIZE) % 2);
+				drawTile(gameData, tile);
+			}
+		}
+
 		if (gameData.player.hp > 0) {
 			drawEntity(gameData, gameData.player);
 			if (playerTakingDamage) {
@@ -285,7 +295,6 @@ int main(int argc, char** argv) {
 			}
 		}
 
-		// Draw enemies
 		for (int i = 0; i < gameData.enemies.size(); i++) {
 			// Check to see if the boolean value is true when the enemy was created. If it was, draw it.
 			drawEntity(gameData, gameData.enemies[i]);
@@ -293,7 +302,6 @@ int main(int argc, char** argv) {
 			// drawCircle(renderer, enemy[i].sprite.position, enemy[i].radius);
 		}
 
-		// Draw bullets
 		for (int i = 0; i < gameData.weaponSpike.size(); i++) {
 			drawEntity(gameData, gameData.weaponSpike[i]);
 			gameData.weaponSpike[i].lifeTime -= deltaTime;

@@ -203,6 +203,18 @@ Character createCharacter(Image image, int healthPoints) {
 	return character;
 }
 
+/*
+void createTile(GameData& gameData, int x, int y) {
+	Tile currentTile = {};
+	currentTile.tileType = rand() % 3;
+	currentTile.position.x = x * TILE_SIZE;
+	currentTile.position.y = y * TILE_SIZE;
+	currentTile.height = TILE_SIZE;
+	currentTile.width = TILE_SIZE;
+	gameData.generatedTiles.push_back(currentTile);
+}
+*/
+
 float randomFloat(float min, float max) {
 	// Gives us a random percentage
 	float base = (float)rand() / (float)RAND_MAX;
@@ -270,6 +282,8 @@ SDL_Rect convertCameraSpace(Camera& camera, SDL_Rect worldSpace) {
 
 	Vector worldSpaceV = { worldSpace.x, worldSpace.y };
 
+	// Entity <------------ Camera 
+	// worldSpaceV is the vector of the entity
 	Vector offset = worldSpaceV - camera.position;
 
 	offset = offset + toCenter;
@@ -280,7 +294,6 @@ SDL_Rect convertCameraSpace(Camera& camera, SDL_Rect worldSpace) {
 }
 
 void drawEntity(GameData& gameData, Entity &entity) {
-	SDL_Renderer* renderer = gameData.renderer;
 	SDL_Rect rect;
 	// rect.x and y is an int. It is truncating the double when it is cast to an int -> (int)
 	rect.w = entity.sprite.width;
@@ -290,7 +303,24 @@ void drawEntity(GameData& gameData, Entity &entity) {
 
 	rect = convertCameraSpace(gameData.camera, rect);
 
-	SDL_RenderCopyEx(renderer, entity.sprite.image.texture, NULL, &rect, entity.angle, NULL, SDL_FLIP_NONE);
+	SDL_RenderCopyEx(gameData.renderer, entity.sprite.image.texture, NULL, &rect, entity.angle, NULL, SDL_FLIP_NONE);
+}
+
+int getRandomTile() {
+	int randomNumber = rand() % TILE_COUNT;
+	return randomNumber;
+}
+
+void drawTile(GameData& gameData, Tile tile) {
+	SDL_Rect rect;
+	rect.w = TILE_SIZE;
+	rect.h = TILE_SIZE;
+	rect.x = tile.position.x;
+	rect.y = tile.position.y;
+
+	rect = convertCameraSpace(gameData.camera, rect);
+
+	SDL_RenderCopyEx(gameData.renderer, gameData.tileTypeArray[tile.tileType].texture, NULL, &rect, 0, NULL, SDL_FLIP_NONE);
 }
 
 // Adds one enemy into the world
@@ -304,6 +334,17 @@ void createEnemy(Image image, Vector position, GameData* gameData, int healthPoi
 	enemy.timeUntilDamage = 0;
 	gameData->enemies.push_back(enemy);
 }
+
+#if 0
+Tile createTile(Image image, Vector position) {
+	Tile tile = {};
+	tile.position = position;
+	tile.height = TILE_SIZE;
+	tile.width = TILE_SIZE;
+	tile.image = image;
+	return tile;
+}
+#endif
 
 Weapon createWeapon(Image image, int damage) {
 	Weapon weapon = {};

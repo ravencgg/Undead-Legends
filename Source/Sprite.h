@@ -3,8 +3,9 @@
 
 const int RESOLUTION_X = 1600;
 const int RESOLUTION_Y = 900;
-const double ENEMY_SPEED = 100;
+const double ENEMY_SPEED = 50;
 const double ENEMY_ACCELERATION = 2500;
+const int TILE_SIZE = 32;
 
 // Extern says this exists but the linker has to
 // find out where it is. Bad practice!! Pass through
@@ -77,8 +78,17 @@ struct Camera {
 	Vector				position;
 };
 
-struct Renderer {
-	
+enum TileType {
+	TILE_GRASS,
+	TILE_DIRT,
+	TILE_ROCK,
+
+	TILE_COUNT
+};
+
+struct Tile {
+	TileType			tileType;
+	Vector				position;
 };
 
 struct GameData {
@@ -88,6 +98,8 @@ struct GameData {
 	Camera				camera;
 	std::vector<Enemy>	enemies;
 	std::vector<Weapon> weaponSpike;
+
+	Image				tileTypeArray[TILE_COUNT];
 };
 
 void myMemcpy(void* destination, void const* source, size_t size);
@@ -106,6 +118,8 @@ double returnSpriteSize(Image image);
 
 Character createCharacter(Image image, int healthPoints);
 
+void createTile(GameData& gameData, int x, int y);
+
 float randomFloat(float min, float max);
 
 float randomFloatScreen(float min, float max);
@@ -119,6 +133,10 @@ void updateEnemyPosition(Character* player, Enemy* enemy, double delta);
 SDL_Rect convertCameraSpace(Camera& camera, SDL_Rect worldSpace);
 
 void drawEntity(GameData& gameData, Entity& entity);
+
+int getRandomTile();
+
+void drawTile(GameData& gameData, Tile tile);
 
 void createEnemy(Image image, Vector position, GameData* gameData, int healthPoints, int damage);
 
