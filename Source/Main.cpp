@@ -6,15 +6,17 @@
 #include <algorithm>
 #include <vector>
 
+
 // DONE: Make hitbox smaller of enemies
 // DONE: Make hitbox of player smaller (distancePlayer / drawCirclePlayer function - offset by 20 pixels)
 // DONE: Randomly spawn enemies around player / off screen?
+// DONE: Enemies drop experience
+// TODO: Exp collision / tracking
 // TODO: Visible player health and enemy health on collision with bullet
 // TODO: Respawning enemies
 // TODO: Enemies spawning in more of waves / groups
 // TODO: Adding player, enemy, weapon variety (Possibly through arrays or vectors)
 // TODO: Add a map
-// TODO: Enemies drop experience
 // TODO: Items / experience that can be picked up by the player
 // TODO: Text rendering
 // TODO: Menu
@@ -26,7 +28,12 @@ bool left = false;
 bool right = false;
 double fireTime = 0;
 double ATTACKSPEED = .1;
-double PROJECTILESPEED = 500;
+double PROJECTILESPEED = 750;
+const double DAMAGE_NUMBER_SIZE_E = 2;
+const double DAMAGE_NUMBER_SIZE_P = 2;
+const double DAMAGE_NUMBER_LIFETIME = .5;
+const double EXPERIENCE_ORB_LIFETIME = 50;
+
 
 int main(int argc, char** argv) {
 
@@ -53,10 +60,12 @@ int main(int argc, char** argv) {
 	// Assets/Enemy_Gargoyle_1.png
 	Image enemyA = loadImage(renderer, "Assets/Enemy_VampireBat_1.png");
 	Image weaponSpikeImage = loadImage(renderer, "Assets/Weapon_Spike_1.png");
+	Image experienceOrbImage = loadImage(renderer, "Assets/Experience_Orb_1.png");
 
 	GameData gameData;
-
 	gameData.renderer = renderer;
+
+	Image textImage = loadText(renderer, "Assets/Text_1.png");
 
 	gameData.player = createCharacter(characterA, 100);
 	gameData.player.position.x = RESOLUTION_X / 2;
@@ -199,7 +208,7 @@ int main(int argc, char** argv) {
 				// Find the closest enemy
 				int nearestEnemy = closestEnemy(gameData.player, &gameData);
 				if (nearestEnemy >= 0) {
-					Weapon weaponSpike = createWeapon(weaponSpikeImage, 50);
+					Weapon weaponSpike = createWeapon(weaponSpikeImage, 25);
 					weaponSpike.position = gameData.player.position;
 					// Vector spikeDirection = facingDirection(weaponSpikeArray[i].sprite.angle);
 					Vector offset = {};
@@ -220,11 +229,20 @@ int main(int argc, char** argv) {
 				double distanceBetween = distance(gameData.weaponSpike[i].position, gameData.enemies[j].position);
 				double radiusSum = gameData.weaponSpike[i].radius + gameData.enemies[j].radius;
 				if (distanceBetween < radiusSum) {
+					// Spawn a number
 					if (gameData.enemies[j].hp > 0) {
+						Vector numberVelocity = {};
+
+						DamageNumber damageNumber = createDamageNumber(gameData.weaponSpike[i].damage, gameData.enemies[j].position, 
+							{ randomFloat(300, -300), randomFloat(-600, -300) }, DAMAGE_NUMBER_SIZE_E, DAMAGE_NUMBER_LIFETIME);
+						gameData.damageNumbers.push_back(damageNumber);
 						gameData.enemies[j].hp -= gameData.weaponSpike[i].damage;
 						gameData.weaponSpike[i].lifeTime = 0;
 						if (gameData.enemies[j].hp <= 0) {
-							gameData.enemies[j].destroyed = true;						
+							gameData.enemies[j].destroyed = true;
+							ExperienceOrb experienceOrb = createExperienceOrb(gameData, experienceOrbImage, 
+								gameData.enemies[j].position.x, gameData.enemies[j].position.y, EXPERIENCE_ORB_LIFETIME);
+							gameData.experienceOrbs.push_back(experienceOrb);
 						}
 
 						// Knock back enemies
@@ -254,6 +272,8 @@ int main(int argc, char** argv) {
 					double distanceBetween = distancePlayer(gameData.player.position, gameData.enemies[i].position);
 					double radiusSum = gameData.player.radius + gameData.enemies[i].radius;
 					if (distanceBetween < radiusSum) {
+						DamageNumber damageNumber1 = createDamageNumber(gameData.enemies[i].damage, gameData.player.position, { randomFloat(300, -300), randomFloat(-600, -300) }, DAMAGE_NUMBER_SIZE_P, DAMAGE_NUMBER_LIFETIME);
+						gameData.damageNumbers.push_back(damageNumber1);
 						gameData.player.hp -= gameData.enemies[i].damage;
 						playerTakingDamage = true;
 						gameData.enemies[i].timeUntilDamage = .1;
@@ -261,8 +281,6 @@ int main(int argc, char** argv) {
 				}
 			}
 		}
-
-		// updateTilePosition
 
 		gameData.camera.position = gameData.player.position;
 
@@ -282,7 +300,7 @@ int main(int argc, char** argv) {
 				double offsetY = gameData.camera.position.y - (RESOLUTION_Y / 2);
 				tile.position.x = (w * (double) TILE_SIZE) + (floor(offsetX / TILE_SIZE) * TILE_SIZE);
 				tile.position.y = (h * (double) TILE_SIZE) + (floor(offsetY / TILE_SIZE) * TILE_SIZE);
-				tile.tileType = (TileType)abs((int)(tile.position.x / TILE_SIZE) % 2);
+				tile.tileType = (TileType)abs((int)(tile.position.x / TILE_SIZE) % 1);
 				drawTile(gameData, tile);
 			}
 		}
@@ -309,6 +327,16 @@ int main(int argc, char** argv) {
 			//drawCircle(renderer, weaponSpikeArray[i].sprite.position, weaponSpikeArray[i].radius);
 		}
 
+		for (int i = 0; i < gameData.damageNumbers.size(); i++) {
+			drawDamageNumber(gameData, gameData.damageNumbers[i], &textImage, deltaTime);
+			gameData.damageNumbers[i].lifeTime -= deltaTime;
+		}
+
+		for (int i = 0; i < gameData.experienceOrbs.size(); i++) {
+			drawEntity(gameData, gameData.experienceOrbs[i]);
+			gameData.experienceOrbs[i].lifeTime -= deltaTime;
+		}
+
 		// After renderPresent, the frame is over
 		SDL_RenderPresent(renderer);
 
@@ -326,6 +354,16 @@ int main(int argc, char** argv) {
 			}
 		);
 
+		std::erase_if(gameData.damageNumbers, [](const DamageNumber& damageNumber) {
+			return damageNumber.lifeTime <= 0;
+			}
+		);
+
+		std::erase_if(gameData.experienceOrbs, [](const ExperienceOrb& experienceOrb) {
+			return experienceOrb.lifeTime <= 0;
+			}
+		);
+
 		// Calculate the frame time (Home much time it's 
 		// taken to get through the loop and update game
 		// objects...etc.
@@ -336,6 +374,7 @@ int main(int argc, char** argv) {
 		{
 			SDL_Delay(frameDelay - frameTime);
 		}
+
 	}
 
 	return 0;

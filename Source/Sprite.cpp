@@ -66,28 +66,12 @@ Vector operator*(Vector a, double b) {
 	return result;
 }
 
-// it is a 'const' because the copy (source) doesn't change
 void myMemcpy(void* destination, void const* source, size_t size) {
-	// We want to go 1 byte at a time using char*
 	char* d = (char*)destination;
 	char* s = (char*)source;
 
 	for (int i = 0; i < size; i++)
 	{
-		// de-reference
-		// all of memory is one long array
-		// dereference means you are talking about the thing the pointer is pointing at, not the address itself
-		// d is an address. the square bracket is saying we want to access the i variable after d.
-		// Examples:
-		// d[i] = s[i] is the same as *d = *s;
-		// *(d + j) = *(s + i);
-		// *d++ = *s++;
-		/*
-		*d = *s;
-		d++;
-		s++;
-		*/
-
 		d[i] = s[i];
 	}
 }
@@ -168,6 +152,51 @@ Image loadImage(SDL_Renderer* renderer, const char* fileName) {
 	return result;
 }
 
+
+Image loadText(SDL_Renderer* renderer, const char* fileName) {
+	Image result;
+	int x, y, n;
+
+	unsigned char* fileData = stbi_load(fileName, &x, &y, &n, 4);
+
+	unsigned char* readPixels = fileData;
+
+	int totalPixels = x * y;
+
+	for (int i = 0; i < totalPixels; i++) {
+		char r = readPixels[0];
+		char g = readPixels[1];
+		char b = readPixels[2];
+		char a = readPixels[3];
+
+		if (r == 0)
+			readPixels[3] = 0;
+
+		readPixels += 4;
+	}
+
+	SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, x, y);
+
+	void* pixels;
+	int pitch;
+	int area = (x * y * 4);
+
+	int lockTexture = SDL_LockTexture(texture, NULL, &pixels, &pitch);
+
+	myMemcpy(pixels, fileData, area);
+
+	SDL_UnlockTexture(texture);
+
+	SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+
+	result.pixelData = fileData;
+	result.texture = texture;
+	result.w = x;
+	result.h = y;
+
+	return result;
+}
+
 double returnSpriteSize(Image image) {
 	Vector center = {};
 	center.x = (double)image.w / 2;
@@ -216,9 +245,7 @@ void createTile(GameData& gameData, int x, int y) {
 */
 
 float randomFloat(float min, float max) {
-	// Gives us a random percentage
 	float base = (float)rand() / (float)RAND_MAX;
-	// 
 	float range = max - min;
 	float newRange = range * base + min;
 	return newRange;
@@ -396,4 +423,78 @@ void drawCircle(GameData& gameData, Vector position, float radius, int circleOff
 		SDL_RenderDrawLine(gameData.renderer, rectangle1.x, rectangle1.y, rectangle2.x, rectangle2.y);
 	
 	}
+}
+
+void drawString(GameData& gameData, SDL_Renderer* renderer, Image* textImage, int size, std::string string, int x, int y) {
+	SDL_Rect sourceRect;
+	sourceRect.w = 7;
+	sourceRect.h = 9;
+	int stringSize = string.size();
+	int spacing = 0;
+	for (int i = 0; i < stringSize; i++) {
+		char glyph = string[i];
+		int index = glyph - ' ';
+		int row = index / 18;
+		int col = index % 18;
+		
+		sourceRect.x = (col * 7);
+		sourceRect.y = (row * 9);
+
+		SDL_Rect destinationRect;
+
+		destinationRect.x = x + spacing;
+		spacing += sourceRect.w;
+
+		destinationRect.y = y - ((9 * 4) / 2);
+		
+		destinationRect.w = 7 * size;
+		destinationRect.h = 9 * size;
+
+		destinationRect = convertCameraSpace(gameData.camera, destinationRect);
+		
+		SDL_RenderCopy(renderer, textImage->texture, &sourceRect, &destinationRect);
+		spacing += destinationRect.w;
+	}
+}
+
+DamageNumber createDamageNumber(int damageNumber, Vector position, Vector velocity, int textSize, double lifeTime) {
+	DamageNumber result;
+
+	result.damageString = std::to_string(damageNumber);
+	result.position = position;
+	result.velocity = velocity;
+	result.textSize = textSize;
+	result.lifeTime = lifeTime;
+
+	return result;
+}
+
+void drawDamageNumber(GameData& gameData, DamageNumber& damageNumber, Image* textImage, double deltaTime) {
+	Vector finalVelocity = {};
+
+	finalVelocity.x = damageNumber.velocity.x;
+	// Gravity only affects the Y axis
+	finalVelocity.y = damageNumber.velocity.y + (GRAVITY * deltaTime);
+
+	Vector displacement = {};
+	displacement.x = ((finalVelocity.x + damageNumber.velocity.x) / 2) * deltaTime;
+	displacement.y = ((finalVelocity.y + damageNumber.velocity.y) / 2) * deltaTime;
+
+	damageNumber.velocity = finalVelocity;
+	damageNumber.position.x += displacement.x;
+	damageNumber.position.y += displacement.y;
+
+	drawString(gameData, gameData.renderer, textImage, damageNumber.textSize, damageNumber.damageString, damageNumber.position.x, damageNumber.position.y);
+}
+
+ExperienceOrb createExperienceOrb(GameData& gameData, Image image, int positionX, int positionY, double lifeTime) {
+	ExperienceOrb result = {};
+
+	result.sprite = createSprite(image);
+	result.radius = returnSpriteSize(image);
+	result.position.x = positionX;
+	result.position.y = positionY;
+	result.lifeTime = lifeTime;
+
+	return result;
 }

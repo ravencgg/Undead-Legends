@@ -1,11 +1,13 @@
 #pragma once
 #include <vector>
+#include <string>
 
 const int RESOLUTION_X = 1600;
 const int RESOLUTION_Y = 900;
 const double ENEMY_SPEED = 50;
 const double ENEMY_ACCELERATION = 2500;
 const int TILE_SIZE = 32;
+const double GRAVITY = 2000;
 
 // Extern says this exists but the linker has to
 // find out where it is. Bad practice!! Pass through
@@ -49,6 +51,14 @@ struct Sprite {
 	int			height;
 };
 
+struct DamageNumber {
+	std::string	damageString;
+	Vector		position;
+	Vector		velocity;
+	int			textSize;
+	double		lifeTime;
+};
+
 struct Entity {
 	Sprite		sprite;
 	Vector		position;
@@ -74,14 +84,19 @@ struct Weapon : Entity {
 	int			damage;
 };
 
+struct ExperienceOrb : Entity {
+	double		lifeTime;
+	int			experienceGained;
+};
+
 struct Camera {
 	Vector				position;
 };
 
 enum TileType {
 	TILE_GRASS,
-	TILE_DIRT,
 	TILE_ROCK,
+	TILE_DIRT,
 
 	TILE_COUNT
 };
@@ -94,12 +109,13 @@ struct Tile {
 struct GameData {
 	SDL_Renderer*		renderer;
 
-	Character			player;
-	Camera				camera;
-	std::vector<Enemy>	enemies;
-	std::vector<Weapon> weaponSpike;
-
-	Image				tileTypeArray[TILE_COUNT];
+	Character					player;
+	Camera						camera;
+	std::vector<Enemy>			enemies;
+	std::vector<Weapon>			weaponSpike;
+	std::vector<DamageNumber>	damageNumbers;
+	std::vector<ExperienceOrb>	experienceOrbs;
+	Image						tileTypeArray[TILE_COUNT];
 };
 
 void myMemcpy(void* destination, void const* source, size_t size);
@@ -114,11 +130,11 @@ double distancePlayer(Vector a, Vector b);
 
 Image loadImage(SDL_Renderer* renderer, const char* fileName);
 
+Image loadText(SDL_Renderer* renderer, const char* fileName);
+
 double returnSpriteSize(Image image);
 
 Character createCharacter(Image image, int healthPoints);
-
-void createTile(GameData& gameData, int x, int y);
 
 float randomFloat(float min, float max);
 
@@ -144,5 +160,12 @@ Weapon createWeapon(Image image, int damage);
 
 int closestEnemy(Character player, GameData* gameData);
 
-// Circle offset doesn't make sense
 void drawCircle(GameData& gameData, Vector position, float radius, int circleOffsetY);
+
+void drawString(GameData& gameData, SDL_Renderer* renderer, Image* textImage, int size, std::string string, int x, int y);
+
+DamageNumber createDamageNumber(int damageNumber, Vector position, Vector velocity, int textSize, double lifeTime);
+
+void drawDamageNumber(GameData& gameData, DamageNumber &damageNumber, Image* textImage, double deltaTime);
+
+ExperienceOrb createExperienceOrb(GameData& gameData, Image image, int positionX, int positionY, double lifeTime);
