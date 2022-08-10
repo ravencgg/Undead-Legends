@@ -6,20 +6,54 @@
 #include <algorithm>
 #include <vector>
 
-
-// DONE: Make hitbox smaller of enemies
-// DONE: Make hitbox of player smaller (distancePlayer / drawCirclePlayer function - offset by 20 pixels)
-// DONE: Randomly spawn enemies around player / off screen?
 // DONE: Enemies drop experience
-// TODO: Exp collision / tracking
-// TODO: Visible player health and enemy health on collision with bullet
-// TODO: Respawning enemies
+// DONE: Text rendering
+// DONE: Visible player health
+// DONE: Clean up code
+// DONE: Enemy health on collision with bullet
+// DONE: Change number colors
+// DONE: Respawning enemies
+
+// DONE?: Fix Warnings
+	// NOTES: I reloaded the project and the below errors went away. Nevermind, they came back?
+		// 0) Primary Error: Severity	Code	Description	Project	File	Line	Suppression State
+			// Warning	C26451	Arithmetic overflow : Using operator '*' on a 4 byte value and
+			// then casting the result to a 8 byte value.Cast the value to the wider type before 
+			// calling operator '*' to avoid overflow(io.2).Project_2_Name_TBD	C : \Projects\Project_2_Name_TBD\Contrib\stb_image.h	1014
+		// 1) Unscoped enum warnings
+		// 2) Cleaning up other warnings (Changed floats to doubles)
+		// 3) Uninitialized struct warnings
+// DONE: Make drawString less specific.
+// DONE: Switch to using convertCameraSpaceNoWH for health bar
+	// See ConvertCameraSpaceScreenWH function
+// DONE: Creating a temporary interface for different enemies and weapons?
+	// Start with keybinds (1-9 spawn weapons) etc.
+// DONE: Outline the current HP bar with a black rectangle
+// DONE: Change game font -> will also change the text scaling. Tried downloading/installing a tff. 
+//			ascii bitmap font
+
+// TODO: Consider add numbers to the health bar
+// TODO: Improve weapon categorization and selections
+// TODO: Display current weapon on screen
+// TODO: Draw animations for a player model and an enemy model
+// TODO: Add boss / Elite monsters that are scaled up or change in color and have health bars
+// TODO: Fix enemy spawning?
+// TODO: Exp collision / tracking NOTE: Give the exp a gravitational pull and have the player
+//			have the stronger gravitational pull so it eventually collides with the player.
+// TODO: Exp bar for character
+// TODO: Enemy drawings / facing directions / animations
 // TODO: Enemies spawning in more of waves / groups
 // TODO: Adding player, enemy, weapon variety (Possibly through arrays or vectors)
-// TODO: Add a map
+// TODO: Develop a better map
 // TODO: Items / experience that can be picked up by the player
-// TODO: Text rendering
 // TODO: Menu
+// TODO: Weapon selection
+// TODO: Boss enemies (with a health bar)
+// TODO: World scaler
+// TODO: Impliment status effects
+// TODO: IMGUI
+// TODO: Statistic overlay
+// TODO: *Refactor*
 
 bool running = true;
 bool up = false;
@@ -27,13 +61,11 @@ bool down = false;
 bool left = false;
 bool right = false;
 double fireTime = 0;
-double ATTACKSPEED = .1;
-double PROJECTILESPEED = 750;
-const double DAMAGE_NUMBER_SIZE_E = 2;
-const double DAMAGE_NUMBER_SIZE_P = 2;
-const double DAMAGE_NUMBER_LIFETIME = .5;
-const double EXPERIENCE_ORB_LIFETIME = 50;
-
+const int DAMAGE_NUMBER_SIZE_E = 1;
+const int DAMAGE_NUMBER_SIZE_P = 1;
+const double DAMAGE_NUMBER_LIFETIME = .75;
+const double EXPERIENCE_ORB_LIFETIME = 10;
+int ENEMYSPAWNAMOUNT = 50;
 
 int main(int argc, char** argv) {
 
@@ -47,66 +79,59 @@ int main(int argc, char** argv) {
 	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1,
 		SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
+	// Maps Types
 	Image mapA = loadImage(renderer, "Assets/Map_1.png");
-	// Character_Ghoul_5.png
-	// Character_Vampire_4.png
-	// Character_Vampire_5_ShortHair.png
-	// Character_Maiden_1.png
-	// Character_FrankensteinCreation_1.png
-	// Character_Skeleton_1.png
-	Image characterA = loadImage(renderer, "Assets/Character_Maiden_1.png");
-	Image mapTextureGrass = loadImage(renderer, "Assets/Map_Grass_1.png");
-	// Assets/Enemy_VampireBat_1.png
-	// Assets/Enemy_Gargoyle_1.png
-	Image enemyA = loadImage(renderer, "Assets/Enemy_VampireBat_1.png");
-	Image weaponSpikeImage = loadImage(renderer, "Assets/Weapon_Spike_1.png");
+
+	// Player Types
+	Image characterDemon = loadImage(renderer, "Assets/Character_Demon_1.png");
+	Image characterMaiden = loadImage(renderer, "Assets/Character_Maiden_1.png");
+	Image characterGhoul = loadImage(renderer, "Assets/Character_Ghoul_5.png");
+	Image characterVampireA = loadImage(renderer, "Assets/Character_Vampire_4.png");
+	Image characterVampireB = loadImage(renderer, "Assets/Character_Vampire_5_ShortHair.png");
+	Image characterFrankensteinCreation = loadImage(renderer, "Assets/Character_FrankensteinCreation_1.png");
+	Image characterSkeleton = loadImage(renderer, "Assets/Character_Skeleton_1.png");
+	
+	// Enemy Types
+	Image enemyBat = loadImage(renderer, "Assets/Enemy_VampireBat_1.png");
+	Image enemyGargoyle = loadImage(renderer, "Assets/Enemy_Gargoyle_1.png");
+	Image enemyType = {};
+	enemyType = enemyBat;
+
+	// Weapon Types
+	Image weaponShadowOrb = loadImage(renderer, "Assets/Weapon_ShadowOrb_1.png");
+	Image weaponSpike = loadImage(renderer, "Assets/Weapon_Spike_1.png");
+	int weaponDamage = 25;
+	Image currentWeaponSelected = weaponShadowOrb;
+	double ATTACKSPEED = .50;
+	double PROJECTILESPEED = 500;
+
 	Image experienceOrbImage = loadImage(renderer, "Assets/Experience_Orb_1.png");
+	// Image font = loadFont(renderer, "Assets/Font_1.png");
+	// Image font = loadFont(renderer, "Assets/Font_2.png");
+	Image font = loadFont(renderer, "Assets/Font_3.png");
 
 	GameData gameData;
 	gameData.renderer = renderer;
 
-	Image textImage = loadText(renderer, "Assets/Text_1.png");
-
-	gameData.player = createCharacter(characterA, 100);
-	gameData.player.position.x = RESOLUTION_X / 2;
-	gameData.player.position.y = RESOLUTION_Y / 2;
-
+	// Map Tiles
 	gameData.tileTypeArray[TILE_GRASS] = loadImage(renderer, "Assets/grassTile.png");
 	gameData.tileTypeArray[TILE_DIRT] = loadImage(renderer, "Assets/dirtTile.png");
 	gameData.tileTypeArray[TILE_ROCK] = loadImage(renderer, "Assets/rockTile.png");
 
-	int spawnAmount = 50;
-	const float DELTA = (M_PI * 2) / spawnAmount;
-	int distanceR = 300;
-
-	for (int i = 0; i < spawnAmount; i++) {
-		double range = randomFloat(RESOLUTION_X / 2, RESOLUTION_X);
-		Vector enemyPosition = facingDirection(randomFloat(0, 360));
-
-		enemyPosition.x *= range;
-		enemyPosition.y *= range;
-
-		enemyPosition.x += RESOLUTION_X / 2;
-		enemyPosition.y += RESOLUTION_Y / 2;
-
-		createEnemy(enemyA, enemyPosition, &gameData, 100, 2);
-	}
+	gameData.player = createCharacter(characterDemon, 100);
+	gameData.player.position.x = RESOLUTION_X / 2;
+	gameData.player.position.y = RESOLUTION_Y / 2;
 
 	// Capping frame rate
 	const int FPS = 60;
 	// The max time between each frame
 	const int frameDelay = 1000 / FPS;
-	// Massive integer
 	Uint32 frameStart;
 	int frameTime;
 
 	double lastFrameTime = getTime();
 
-	int wCameraSpace = 0;
-	int hCameraSpace = 0;
-
  	while (running) {
-		// How many miliseconds it's been since we first
 		frameStart = SDL_GetTicks();
 		SDL_Event event = {};
 		while (SDL_PollEvent(&event)) {
@@ -144,6 +169,74 @@ int main(int argc, char** argv) {
 				case SDLK_s:
 					down = true;
 					break;
+
+				// Characters
+				case SDLK_1:
+					gameData.player = createCharacter(characterDemon, 100);
+					gameData.player.position.x = RESOLUTION_X / 2;
+					gameData.player.position.y = RESOLUTION_Y / 2;
+					break;
+				case SDLK_2:
+					gameData.player = createCharacter(characterGhoul, 100);
+					gameData.player.position.x = RESOLUTION_X / 2;
+					gameData.player.position.y = RESOLUTION_Y / 2;
+					break;
+				case SDLK_3:
+					gameData.player = createCharacter(characterMaiden, 100);
+					gameData.player.position.x = RESOLUTION_X / 2;
+					gameData.player.position.y = RESOLUTION_Y / 2;
+					break;
+				case SDLK_4:
+					gameData.player = createCharacter(characterVampireA, 100);
+					gameData.player.position.x = RESOLUTION_X / 2;
+					gameData.player.position.y = RESOLUTION_Y / 2;
+					break;
+				case SDLK_5:
+					gameData.player = createCharacter(characterVampireB, 100);
+					gameData.player.position.x = RESOLUTION_X / 2;
+					gameData.player.position.y = RESOLUTION_Y / 2;
+					break;
+				case SDLK_6:
+					gameData.player = createCharacter(characterFrankensteinCreation, 100);
+					gameData.player.position.x = RESOLUTION_X / 2;
+					gameData.player.position.y = RESOLUTION_Y / 2;
+					break;
+				case SDLK_7:
+					gameData.player = createCharacter(characterSkeleton, 100);
+					gameData.player.position.x = RESOLUTION_X / 2;
+					gameData.player.position.y = RESOLUTION_Y / 2;
+					break;
+					
+
+				// Enemies
+				case SDLK_z:
+					destroyEnemies(gameData);
+					enemyType = enemyBat;
+					break;
+				case SDLK_x:
+					destroyEnemies(gameData);
+					enemyType = enemyGargoyle;
+					break;
+
+				// Weapons
+				case SDLK_r:
+					currentWeaponSelected = weaponShadowOrb;
+					weaponDamage = 50;
+					ATTACKSPEED = .5;
+					PROJECTILESPEED = 500;
+					break;
+				case SDLK_t:
+					currentWeaponSelected = weaponSpike;
+					weaponDamage = 25;
+					ATTACKSPEED = .25;
+					PROJECTILESPEED = 750;
+					break;
+
+				// Destroy
+				case SDLK_BACKSPACE:
+					destroyEnemies(gameData);
+					break;
+
 				}
 				break;
 			}
@@ -171,7 +264,20 @@ int main(int argc, char** argv) {
 			gameData.player.position.y -= speed;
 		}
 
-		// 1: Check to see if the enemies are colliding with eachother
+		// Spawn enemies
+		for (int i = 0; i < (ENEMYSPAWNAMOUNT - gameData.enemies.size()); i++) {
+			double range = randomFloat(RESOLUTION_X / 2, RESOLUTION_X);
+			Vector enemyPosition = facingDirection(randomFloat(0, 360));
+
+			enemyPosition.x *= range;
+			enemyPosition.y *= range;
+
+			enemyPosition.x += RESOLUTION_X / 2;
+			enemyPosition.y += RESOLUTION_Y / 2;
+
+			createEnemy(enemyType, enemyPosition, &gameData, 100, 2);
+		}
+
 		if (gameData.player.hp > 0) {
 			for (int i = 0; i < gameData.enemies.size(); i++) {			
 				updateEnemyPosition(&gameData.player, &gameData.enemies[i], deltaTime);
@@ -180,37 +286,51 @@ int main(int argc, char** argv) {
 						continue;
 					}
 					else {
-						// Length
 						double distanceBetween = distance(gameData.enemies[i].position, gameData.enemies[j].position);
 						double radiusSum = gameData.enemies[i].radius + gameData.enemies[j].radius;
 						if (distanceBetween < radiusSum) {
 							Vector offset = gameData.enemies[j].position - gameData.enemies[i].position;
-							// This is equivalent to offset / length
 							offset *= 1 / distanceBetween;							
 							offset *= radiusSum;
 							gameData.enemies[j].position = offset + gameData.enemies[i].position;
 						}
-						// float randomNumber = randomFloat(-80, 80);
 					}
 				}
 			}
 		}
 
 		// Update weapon position
-		for (int i = 0; i < gameData.weaponSpike.size(); i++) {
-			updateEntityPosition(&gameData.weaponSpike[i], deltaTime);
+		for (int i = 0; i < gameData.weapon.size(); i++) {
+			updateEntityPosition(&gameData.weapon[i], deltaTime);
 		}
 
 		// Weapon spike firing at nearest enemies
-		// Check if the player is existing
 		if (gameData.player.hp > 0) {
 			if (fireTime <= 0) {
-				// Find the closest enemy
+				int nearestEnemy = closestEnemy(gameData.player, &gameData);
+				if (nearestEnemy >= 0) {
+					Weapon currentWeaponInUse = createWeapon(currentWeaponSelected, weaponDamage);
+					currentWeaponInUse.position = gameData.player.position;;
+					Vector offset = {};
+					// Calculates the vector from the player to the enemy (enemy <--- player)
+					offset = gameData.enemies[nearestEnemy].position - gameData.player.position;
+					currentWeaponInUse.velocity = normalize(offset);
+					currentWeaponInUse.velocity *= PROJECTILESPEED;
+					fireTime = ATTACKSPEED;
+					currentWeaponInUse.angle = angleFromDirection(currentWeaponInUse.velocity);
+					gameData.weapon.push_back(currentWeaponInUse);
+				}
+			}
+		}
+
+		/*
+		// Weapon spike firing at nearest enemies
+		if (gameData.player.hp > 0) {
+			if (fireTime <= 0) {
 				int nearestEnemy = closestEnemy(gameData.player, &gameData);
 				if (nearestEnemy >= 0) {
 					Weapon weaponSpike = createWeapon(weaponSpikeImage, 25);
-					weaponSpike.position = gameData.player.position;
-					// Vector spikeDirection = facingDirection(weaponSpikeArray[i].sprite.angle);
+					weaponSpike.position = gameData.player.position;;
 					Vector offset = {};
 					// Calculates the vector from the player to the enemy (enemy <--- player)
 					offset = gameData.enemies[nearestEnemy].position - gameData.player.position;
@@ -222,22 +342,22 @@ int main(int argc, char** argv) {
 				}
 			}
 		}
+		*/
 
 		// Weapon collision with enemy
-		for (int i = 0; i < gameData.weaponSpike.size(); i++) {
+		for (int i = 0; i < gameData.weapon.size(); i++) {
 			for (int j = 0; j < gameData.enemies.size(); j++) {
-				double distanceBetween = distance(gameData.weaponSpike[i].position, gameData.enemies[j].position);
-				double radiusSum = gameData.weaponSpike[i].radius + gameData.enemies[j].radius;
+				double distanceBetween = distance(gameData.weapon[i].position, gameData.enemies[j].position);
+				double radiusSum = gameData.weapon[i].radius + gameData.enemies[j].radius;
 				if (distanceBetween < radiusSum) {
-					// Spawn a number
 					if (gameData.enemies[j].hp > 0) {
 						Vector numberVelocity = {};
 
-						DamageNumber damageNumber = createDamageNumber(gameData.weaponSpike[i].damage, gameData.enemies[j].position, 
+						DamageNumber damageNumber = createDamageNumber(ENTITY_ENEMY, gameData.weapon[i].damage, gameData.enemies[j].position, 
 							{ randomFloat(300, -300), randomFloat(-600, -300) }, DAMAGE_NUMBER_SIZE_E, DAMAGE_NUMBER_LIFETIME);
 						gameData.damageNumbers.push_back(damageNumber);
-						gameData.enemies[j].hp -= gameData.weaponSpike[i].damage;
-						gameData.weaponSpike[i].lifeTime = 0;
+						gameData.enemies[j].hp -= gameData.weapon[i].damage;
+						gameData.weapon[i].lifeTime = 0;
 						if (gameData.enemies[j].hp <= 0) {
 							gameData.enemies[j].destroyed = true;
 							ExperienceOrb experienceOrb = createExperienceOrb(gameData, experienceOrbImage, 
@@ -246,7 +366,7 @@ int main(int argc, char** argv) {
 						}
 
 						// Knock back enemies
-						gameData.enemies[j].velocity = gameData.weaponSpike[i].velocity;
+						gameData.enemies[j].velocity = gameData.weapon[i].velocity;
 						double length = sqrt(gameData.enemies[j].velocity.x * gameData.enemies[j].velocity.x + gameData.enemies[j].velocity.y * gameData.enemies[j].velocity.y);
 						gameData.enemies[j].velocity.x /= length;
 						gameData.enemies[j].velocity.y /= length;
@@ -272,8 +392,8 @@ int main(int argc, char** argv) {
 					double distanceBetween = distancePlayer(gameData.player.position, gameData.enemies[i].position);
 					double radiusSum = gameData.player.radius + gameData.enemies[i].radius;
 					if (distanceBetween < radiusSum) {
-						DamageNumber damageNumber1 = createDamageNumber(gameData.enemies[i].damage, gameData.player.position, { randomFloat(300, -300), randomFloat(-600, -300) }, DAMAGE_NUMBER_SIZE_P, DAMAGE_NUMBER_LIFETIME);
-						gameData.damageNumbers.push_back(damageNumber1);
+						DamageNumber damageNumber = createDamageNumber(ENTITY_PLAYER, gameData.enemies[i].damage, gameData.player.position, { randomFloat(300, -300), randomFloat(-600, -300) }, DAMAGE_NUMBER_SIZE_P, DAMAGE_NUMBER_LIFETIME);
+						gameData.damageNumbers.push_back(damageNumber);
 						gameData.player.hp -= gameData.enemies[i].damage;
 						playerTakingDamage = true;
 						gameData.enemies[i].timeUntilDamage = .1;
@@ -290,8 +410,8 @@ int main(int argc, char** argv) {
 		SDL_RenderClear(renderer);
 		SDL_RenderCopy(renderer, mapA.texture, NULL, NULL);
 
-		int playerPositionX = gameData.player.position.x;
-		int playerPositionY = gameData.player.position.y;
+		double playerPositionX = gameData.player.position.x;
+		double playerPositionY = gameData.player.position.y;
 
 		for (int w = 0; w < (RESOLUTION_X / TILE_SIZE) + 2; w++) {
 			for (int h = 0; h < (RESOLUTION_Y / TILE_SIZE) + 2; h++) {
@@ -305,30 +425,42 @@ int main(int argc, char** argv) {
 			}
 		}
 
+		// Draw player healthbar
+		drawHealthBar(gameData, renderer);
+
+		// Draw entities
 		if (gameData.player.hp > 0) {
 			drawEntity(gameData, gameData.player);
+#if 0
 			if (playerTakingDamage) {
-				SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-				drawCircle(gameData, gameData.player.position, gameData.player.radius, -20);
+				if (playerTakingDamage) {
+					SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
+					drawCircle(gameData, gameData.player.position, gameData.player.radius, -20);
+					// drawHealthBar(gameData, gameData.player.position, 0);
+				}
 			}
+#endif
 		}
+
 
 		for (int i = 0; i < gameData.enemies.size(); i++) {
 			// Check to see if the boolean value is true when the enemy was created. If it was, draw it.
+			double damagePercent = (double)gameData.enemies[i].hp / (double)gameData.enemies[i].maxHP;
+			SDL_SetTextureColorMod(gameData.enemies[i].sprite.image.texture, (Uint8)255, (Uint8)(100 + (155 * damagePercent)), (Uint8)(100 + (155 * damagePercent)));
 			drawEntity(gameData, gameData.enemies[i]);
 			// SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
 			// drawCircle(renderer, enemy[i].sprite.position, enemy[i].radius);
 		}
 
-		for (int i = 0; i < gameData.weaponSpike.size(); i++) {
-			drawEntity(gameData, gameData.weaponSpike[i]);
-			gameData.weaponSpike[i].lifeTime -= deltaTime;
-			//SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-			//drawCircle(renderer, weaponSpikeArray[i].sprite.position, weaponSpikeArray[i].radius);
+		for (int i = 0; i < gameData.weapon.size(); i++) {
+			drawEntity(gameData, gameData.weapon[i]);
+			gameData.weapon[i].lifeTime -= deltaTime;
+			// SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+			// drawCircle(renderer, weaponSpikeArray[i].sprite.position, weaponSpikeArray[i].radius);
 		}
 
 		for (int i = 0; i < gameData.damageNumbers.size(); i++) {
-			drawDamageNumber(gameData, gameData.damageNumbers[i], &textImage, deltaTime);
+			drawDamageNumber(gameData, gameData.damageNumbers[i], &font, deltaTime);
 			gameData.damageNumbers[i].lifeTime -= deltaTime;
 		}
 
@@ -348,8 +480,7 @@ int main(int argc, char** argv) {
 			}
 		);
 
-		// If lifeTime <= 0, get rid of it
-		std::erase_if(gameData.weaponSpike, [](const Weapon& weapon) {
+		std::erase_if(gameData.weapon, [](const Weapon& weapon) {
 			return weapon.lifeTime <= 0;
 			}
 		);

@@ -8,10 +8,8 @@ const double ENEMY_SPEED = 50;
 const double ENEMY_ACCELERATION = 2500;
 const int TILE_SIZE = 32;
 const double GRAVITY = 2000;
-
-// Extern says this exists but the linker has to
-// find out where it is. Bad practice!! Pass through
-// functions in the future.
+const int HEALTH_BAR_W = 55;
+const int HEALTH_BAR_H = 8;
 
 struct Vector {
 	double		x;
@@ -33,6 +31,21 @@ Vector& operator*=(Vector& a, double b);
 Vector operator*(Vector a, double b);
 
 double angleFromDirection(Vector a);
+
+enum TileType {
+	TILE_ROCK,
+	TILE_GRASS,
+	TILE_DIRT,
+
+	TILE_COUNT
+};
+
+enum EntityType {
+	ENTITY_PLAYER,
+	ENTITY_ENEMY,
+
+	ENTITY_COUNT
+};
 
 struct Image {
 	unsigned char*	pixelData;
@@ -57,6 +70,7 @@ struct DamageNumber {
 	Vector		velocity;
 	int			textSize;
 	double		lifeTime;
+	EntityType	entityType;
 };
 
 struct Entity {
@@ -68,6 +82,7 @@ struct Entity {
 	double		radius;
 
 	int			hp;
+	int			maxHP;
 };
 
 struct Character : Entity {
@@ -93,14 +108,6 @@ struct Camera {
 	Vector				position;
 };
 
-enum TileType {
-	TILE_GRASS,
-	TILE_ROCK,
-	TILE_DIRT,
-
-	TILE_COUNT
-};
-
 struct Tile {
 	TileType			tileType;
 	Vector				position;
@@ -112,7 +119,7 @@ struct GameData {
 	Character					player;
 	Camera						camera;
 	std::vector<Enemy>			enemies;
-	std::vector<Weapon>			weaponSpike;
+	std::vector<Weapon>			weapon;
 	std::vector<DamageNumber>	damageNumbers;
 	std::vector<ExperienceOrb>	experienceOrbs;
 	Image						tileTypeArray[TILE_COUNT];
@@ -130,7 +137,7 @@ double distancePlayer(Vector a, Vector b);
 
 Image loadImage(SDL_Renderer* renderer, const char* fileName);
 
-Image loadText(SDL_Renderer* renderer, const char* fileName);
+Image loadFont(SDL_Renderer* renderer, const char* fileName);
 
 double returnSpriteSize(Image image);
 
@@ -138,15 +145,15 @@ Character createCharacter(Image image, int healthPoints);
 
 float randomFloat(float min, float max);
 
-float randomFloatScreen(float min, float max);
-
 void updateEntityPosition(Entity* entity, double delta);
 
-float dotProduct(Vector a, Vector b);
+double dotProduct(Vector a, Vector b);
 
 void updateEnemyPosition(Character* player, Enemy* enemy, double delta);
 
 SDL_Rect convertCameraSpace(Camera& camera, SDL_Rect worldSpace);
+
+SDL_Rect convertCameraSpaceScreenWH(Camera& camera, SDL_Rect worldSpace);
 
 void drawEntity(GameData& gameData, Entity& entity);
 
@@ -160,12 +167,20 @@ Weapon createWeapon(Image image, int damage);
 
 int closestEnemy(Character player, GameData* gameData);
 
-void drawCircle(GameData& gameData, Vector position, float radius, int circleOffsetY);
+void drawCircle(GameData& gameData, Vector position, double radius, int circleOffsetY);
 
-void drawString(GameData& gameData, SDL_Renderer* renderer, Image* textImage, int size, std::string string, int x, int y);
+void drawString(Color color, GameData& gameData, SDL_Renderer* renderer, Image* textImage, int size, std::string string, int x, int y);
 
-DamageNumber createDamageNumber(int damageNumber, Vector position, Vector velocity, int textSize, double lifeTime);
+DamageNumber createDamageNumber(EntityType type, int damageNumber, Vector position, Vector velocity, int textSize, double lifeTime);
 
 void drawDamageNumber(GameData& gameData, DamageNumber &damageNumber, Image* textImage, double deltaTime);
 
-ExperienceOrb createExperienceOrb(GameData& gameData, Image image, int positionX, int positionY, double lifeTime);
+ExperienceOrb createExperienceOrb(GameData& gameData, Image image, double positionX, double positionY, double lifeTime);
+
+void drawFilledRectangle(SDL_Renderer* renderer, SDL_Rect* rect, int red, int green, int blue, int alpha);
+
+void drawNonFilledRectangle(SDL_Renderer* renderer, SDL_Rect* rect, int red, int green, int blue, int alpha);
+
+void drawHealthBar(GameData& gameData, SDL_Renderer* renderer);
+
+void destroyEnemies(GameData& gameData);

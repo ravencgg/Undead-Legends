@@ -2,13 +2,7 @@
 #include "stb_image.h"
 #include <stdio.h>
 #include "Sprite.h"
-// For max double in nearestEnemy()
 #include <float.h>
-
-// A .obj file is the result of compilation. Inside them 
-// is all the code and hard coded data.
-// The linker will open Vector.obj
-// Cpp files are compiled. Header files are not.
 
 double getTime() {
 	return SDL_GetTicks() / 1000.0;
@@ -30,10 +24,7 @@ double angleFromDirection(Vector a) {
 	return result;
 }
 
-// Vector math
 Vector normalize(Vector a) {
-	// Find the length (the magnitude)
-	// (See notes)
 	double magnitude = sqrt(a.x * a.x + a.y * a.y);
 	Vector normalized = { a.x / magnitude, a.y / magnitude };
 	return normalized;
@@ -86,9 +77,7 @@ Sprite createSprite(Image image) {
 Color readPixel(Image image, int x, int y) {
 	// This is a cast from 1 unsigned character to 4 unsigned characters
 	Color* pixels = (Color*)image.pixelData;
-
 	// The square brackets are derefencing the pointer
-	// 3 * 6 + 6
 	Color c = pixels[y * image.w + x];
 
 	return c;
@@ -114,7 +103,6 @@ double distancePlayer(Vector a, Vector b) {
 	return result;
 }
 
-// Review
 Image loadImage(SDL_Renderer* renderer, const char* fileName) {
 	Image result;
 
@@ -133,7 +121,7 @@ Image loadImage(SDL_Renderer* renderer, const char* fileName) {
 	int lockTexture = SDL_LockTexture(texture, NULL, &pixels,
 		&pitch);
 
-	myMemcpy(pixels, data, (x * y * 4));
+	myMemcpy(pixels, data, ((size_t)x * (size_t)y * 4));
 
 	// prevents leaking memory (memory is being leaked
 	// we no longer want to free the memory
@@ -152,8 +140,7 @@ Image loadImage(SDL_Renderer* renderer, const char* fileName) {
 	return result;
 }
 
-
-Image loadText(SDL_Renderer* renderer, const char* fileName) {
+Image loadFont(SDL_Renderer* renderer, const char* fileName) {
 	Image result;
 	int x, y, n;
 
@@ -229,31 +216,11 @@ Character createCharacter(Image image, int healthPoints) {
 	character.sprite = createSprite(image);
 	character.radius = returnSpriteSize(image) / 2;
 	character.hp = healthPoints;
+	character.maxHP = healthPoints;
 	return character;
 }
 
-/*
-void createTile(GameData& gameData, int x, int y) {
-	Tile currentTile = {};
-	currentTile.tileType = rand() % 3;
-	currentTile.position.x = x * TILE_SIZE;
-	currentTile.position.y = y * TILE_SIZE;
-	currentTile.height = TILE_SIZE;
-	currentTile.width = TILE_SIZE;
-	gameData.generatedTiles.push_back(currentTile);
-}
-*/
-
 float randomFloat(float min, float max) {
-	float base = (float)rand() / (float)RAND_MAX;
-	float range = max - min;
-	float newRange = range * base + min;
-	return newRange;
-}
-
-// Test function
-float randomFloatScreen(float min, float max) {
-	// Gives us a random percentage
 	float base = (float)rand() / (float)RAND_MAX;
 	float range = max - min;
 	float newRange = range * base + min;
@@ -267,12 +234,12 @@ void updateEntityPosition(Entity* entity, double delta) {
 	entity->position.y += entity->velocity.y * delta;
 }
 
-float dotProduct(Vector a, Vector b) {
+double dotProduct(Vector a, Vector b) {
 	return a.x * b.x + a.y * b.y;
 }
 
 void updateEnemyPosition(Character* player, Enemy* enemy, double delta) {
-	// Direction you want to acclerate in
+	// Direction you want to accelerate
 	Vector enemyToPlayer = player->position - enemy->position;
 	
 	// Normalize to 1
@@ -307,7 +274,7 @@ SDL_Rect convertCameraSpace(Camera& camera, SDL_Rect worldSpace) {
 
 	Vector toCenter = { RESOLUTION_X / 2.0f, RESOLUTION_Y / 2.0f };
 
-	Vector worldSpaceV = { worldSpace.x, worldSpace.y };
+	Vector worldSpaceV = { (double)worldSpace.x, (double)worldSpace.y };
 
 	// Entity <------------ Camera 
 	// worldSpaceV is the vector of the entity
@@ -320,13 +287,34 @@ SDL_Rect convertCameraSpace(Camera& camera, SDL_Rect worldSpace) {
 	return cameraSpace;
 }
 
+// W / H conversion not relevant to WS
+SDL_Rect convertCameraSpaceScreenWH(Camera& camera, SDL_Rect worldSpace) {
+	SDL_Rect cameraSpace = {};
+	// Converts the healthbar to the width and height of the screen
+	cameraSpace.w = worldSpace.w * (RESOLUTION_X / 1600);
+	cameraSpace.h = worldSpace.h * (RESOLUTION_Y / 900);
+
+	Vector toCenter = { RESOLUTION_X / 2.0f, RESOLUTION_Y / 2.0f };
+
+	Vector worldSpaceV = { (double)worldSpace.x, (double)worldSpace.y };
+
+	Vector offset = worldSpaceV - camera.position;
+
+	offset = offset + toCenter;
+
+	cameraSpace.x = (int)offset.x - cameraSpace.w / 2;
+	cameraSpace.y = (int)offset.y - cameraSpace.h / 2;
+
+	return cameraSpace;
+}
+
 void drawEntity(GameData& gameData, Entity &entity) {
 	SDL_Rect rect;
 	// rect.x and y is an int. It is truncating the double when it is cast to an int -> (int)
 	rect.w = entity.sprite.width;
 	rect.h = entity.sprite.height;
-	rect.x = entity.position.x;
-	rect.y = entity.position.y;
+	rect.x = (int)entity.position.x;
+	rect.y = (int)entity.position.y;
 
 	rect = convertCameraSpace(gameData.camera, rect);
 
@@ -342,42 +330,33 @@ void drawTile(GameData& gameData, Tile tile) {
 	SDL_Rect rect;
 	rect.w = TILE_SIZE;
 	rect.h = TILE_SIZE;
-	rect.x = tile.position.x;
-	rect.y = tile.position.y;
+	rect.x = (int)tile.position.x;
+	rect.y = (int)tile.position.y;
 
 	rect = convertCameraSpace(gameData.camera, rect);
 
 	SDL_RenderCopyEx(gameData.renderer, gameData.tileTypeArray[tile.tileType].texture, NULL, &rect, 0, NULL, SDL_FLIP_NONE);
 }
 
-// Adds one enemy into the world
 void createEnemy(Image image, Vector position, GameData* gameData, int healthPoints, int damage) {
 	Enemy enemy = {};
+
 	enemy.radius = returnSpriteSize(image) / 2;
 	enemy.sprite = createSprite(image);
 	enemy.position = position;
 	enemy.hp = healthPoints;
+	enemy.maxHP = healthPoints;
 	enemy.damage = damage;
 	enemy.timeUntilDamage = 0;
+
 	gameData->enemies.push_back(enemy);
 }
-
-#if 0
-Tile createTile(Image image, Vector position) {
-	Tile tile = {};
-	tile.position = position;
-	tile.height = TILE_SIZE;
-	tile.width = TILE_SIZE;
-	tile.image = image;
-	return tile;
-}
-#endif
 
 Weapon createWeapon(Image image, int damage) {
 	Weapon weapon = {};
 	weapon.sprite = createSprite(image);
 	weapon.radius = returnSpriteSize(image);
-	weapon.lifeTime = 10;
+	weapon.lifeTime = 3;
 	weapon.damage = damage;
 	return weapon;
 }
@@ -395,29 +374,28 @@ int closestEnemy(Character player, GameData* gameData) {
 	return index;
 }
 
-void drawCircle(GameData& gameData, Vector position, float radius, int circleOffsetY) {
-	// We are going through the C runtime library so we need to be talking in terms of radians
-	// SDL talks in terms of degrees
+void drawCircle(GameData& gameData, Vector position, double radius, int circleOffsetY) {
+	// SDL talks in terms of degrees. We need radians.
 	const int NUMPOINTS = 24;
-	const float DELTA = (M_PI * 2) / NUMPOINTS;
+	const double DELTA = (M_PI * 2) / NUMPOINTS;
 
 	// 24 is 1 less of the number of lines we need to draw so add one
 	for (int i = 0; i < NUMPOINTS + 1; i++) {
 		// Where we are starting to draw
-		float x1 = position.x + cos(DELTA * i) * radius;
-		float y1 = (position.y - circleOffsetY) + sin(DELTA * i) * radius;
+		double x1 = position.x + cos(DELTA * i) * radius;
+		double y1 = (position.y - circleOffsetY) + sin(DELTA * i) * radius;
 		// Where we are drawing to
-		float x2 = position.x + cos(DELTA * (i + 1)) * radius;
-		float y2 = (position.y - circleOffsetY) + sin(DELTA * (i + 1)) * radius;
+		double x2 = position.x + cos(DELTA * ((double)i + 1)) * radius;
+		double y2 = (position.y - circleOffsetY) + sin(DELTA * ((double)i + 1)) * radius;
 		
 		SDL_Rect rectangle1 = {};
-		rectangle1.x = x1;
-		rectangle1.y = y1;
+		rectangle1.x = (int)x1;
+		rectangle1.y = (int)y1;
 		rectangle1 = convertCameraSpace(gameData.camera, rectangle1);
 
 		SDL_Rect rectangle2 = {};
-		rectangle2.x = x2;
-		rectangle2.y = y2;
+		rectangle2.x = (int)x2;
+		rectangle2.y = (int)y2;
 		rectangle2 = convertCameraSpace(gameData.camera, rectangle2);
 
 		SDL_RenderDrawLine(gameData.renderer, rectangle1.x, rectangle1.y, rectangle2.x, rectangle2.y);
@@ -425,41 +403,122 @@ void drawCircle(GameData& gameData, Vector position, float radius, int circleOff
 	}
 }
 
-void drawString(GameData& gameData, SDL_Renderer* renderer, Image* textImage, int size, std::string string, int x, int y) {
+// Font_1
+#if 0
+void drawString(Color color, GameData& gameData, SDL_Renderer* renderer, Image* textImage, int size, std::string string, int x, int y) {
 	SDL_Rect sourceRect;
 	sourceRect.w = 7;
 	sourceRect.h = 9;
-	int stringSize = string.size();
+	int stringSize = (int)string.size();
 	int spacing = 0;
+	char* read = {};
+
 	for (int i = 0; i < stringSize; i++) {
 		char glyph = string[i];
 		int index = glyph - ' ';
 		int row = index / 18;
 		int col = index % 18;
-		
+
 		sourceRect.x = (col * 7);
 		sourceRect.y = (row * 9);
 
 		SDL_Rect destinationRect;
 
 		destinationRect.x = x + spacing;
-		spacing += sourceRect.w;
 
 		destinationRect.y = y - ((9 * 4) / 2);
-		
+
 		destinationRect.w = 7 * size;
 		destinationRect.h = 9 * size;
 
 		destinationRect = convertCameraSpace(gameData.camera, destinationRect);
+
+		SDL_SetTextureColorMod(textImage->texture, color.r, color.g, color.b);
+
+		SDL_RenderCopy(renderer, textImage->texture, &sourceRect, &destinationRect);
+		spacing += destinationRect.w;
+	}
+}
+#endif
+
+// Font_2
+#if 0
+void drawString(Color color, GameData& gameData, SDL_Renderer* renderer, Image* textImage, int size, std::string string, int x, int y) {
+	SDL_Rect sourceRect;
+	sourceRect.w = 82;
+	sourceRect.h = 82;
+	int stringSize = (int)string.size();
+	int spacing = 0;
+
+	for (int i = 0; i < stringSize; i++) {
+		char glyph = string[i];
+		// No need for = ' '
+		int index = glyph;
+		int row = index / 16;
+		int col = index % 16;
 		
+		sourceRect.x = (col * 82);
+		sourceRect.y = (row * 82);
+
+		SDL_Rect destinationRect;
+
+		destinationRect.x = x + spacing;
+
+		destinationRect.y = y/* - ((82 * 4) / 2)*/;
+		
+		destinationRect.w = 82 * size;
+		destinationRect.h = 82 * size;
+
+		destinationRect = convertCameraSpace(gameData.camera, destinationRect);
+		
+		SDL_SetTextureColorMod(textImage->texture, color.r, color.g, color.b);
+
+		SDL_RenderCopy(renderer, textImage->texture, &sourceRect, &destinationRect);
+		spacing += destinationRect.w;
+	}
+}
+#endif
+
+// Font_3
+void drawString(Color color, GameData& gameData, SDL_Renderer* renderer, Image* textImage, int size, std::string string, int x, int y) {
+	SDL_Rect sourceRect = {};
+	sourceRect.w = 14;
+	sourceRect.h = 18;
+	int stringSize = (int)string.size();
+	int spacing = 0;
+	char* read = {};
+
+	for (int i = 0; i < stringSize; i++) {
+		char glyph = string[i];
+		int index = glyph - ' ';
+		int row = index / 18;
+		int col = index % 18;
+
+		sourceRect.x = (col * 14);
+		sourceRect.y = (row * 18);
+
+		SDL_Rect destinationRect;
+
+		destinationRect.x = x + spacing;
+
+		destinationRect.y = y/* - ((18 * 4) / 2)*/;
+
+		destinationRect.w = 14 * size;
+		destinationRect.h = 18 * size;
+
+		destinationRect = convertCameraSpace(gameData.camera, destinationRect);
+
+		SDL_SetTextureColorMod(textImage->texture, color.r, color.g, color.b);
+
 		SDL_RenderCopy(renderer, textImage->texture, &sourceRect, &destinationRect);
 		spacing += destinationRect.w;
 	}
 }
 
-DamageNumber createDamageNumber(int damageNumber, Vector position, Vector velocity, int textSize, double lifeTime) {
+DamageNumber createDamageNumber(EntityType type, int damageNumber, Vector position, Vector velocity, int textSize, double lifeTime) {
 	DamageNumber result;
 
+	result.entityType = type;
 	result.damageString = std::to_string(damageNumber);
 	result.position = position;
 	result.velocity = velocity;
@@ -471,6 +530,7 @@ DamageNumber createDamageNumber(int damageNumber, Vector position, Vector veloci
 
 void drawDamageNumber(GameData& gameData, DamageNumber& damageNumber, Image* textImage, double deltaTime) {
 	Vector finalVelocity = {};
+	Color color = {};
 
 	finalVelocity.x = damageNumber.velocity.x;
 	// Gravity only affects the Y axis
@@ -484,10 +544,21 @@ void drawDamageNumber(GameData& gameData, DamageNumber& damageNumber, Image* tex
 	damageNumber.position.x += displacement.x;
 	damageNumber.position.y += displacement.y;
 
-	drawString(gameData, gameData.renderer, textImage, damageNumber.textSize, damageNumber.damageString, damageNumber.position.x, damageNumber.position.y);
+	if (damageNumber.entityType == ENTITY_PLAYER) {
+		color.r = 255;
+		color.g = 0;
+		color.b = 0;
+	}
+	if (damageNumber.entityType == ENTITY_ENEMY) {
+		color.r = 255;
+		color.g = 165;
+		color.b = 0;
+	}
+
+	drawString(color, gameData, gameData.renderer, textImage, damageNumber.textSize, damageNumber.damageString, (int)damageNumber.position.x, (int)damageNumber.position.y);
 }
 
-ExperienceOrb createExperienceOrb(GameData& gameData, Image image, int positionX, int positionY, double lifeTime) {
+ExperienceOrb createExperienceOrb(GameData& gameData, Image image, double positionX, double positionY, double lifeTime) {
 	ExperienceOrb result = {};
 
 	result.sprite = createSprite(image);
@@ -497,4 +568,56 @@ ExperienceOrb createExperienceOrb(GameData& gameData, Image image, int positionX
 	result.lifeTime = lifeTime;
 
 	return result;
+}
+
+void drawFilledRectangle(SDL_Renderer* renderer, SDL_Rect* rect, int red, int green, int blue, int alpha) {
+	SDL_SetRenderDrawColor(renderer, red, green, blue, alpha);
+	SDL_RenderFillRect(renderer, rect);
+}
+
+void drawNonFilledRectangle(SDL_Renderer* renderer, SDL_Rect* rect, int red, int green, int blue, int alpha) {
+	SDL_SetRenderDrawColor(renderer, red, green, blue, alpha);
+	SDL_RenderDrawRect(renderer, rect);
+}
+
+void drawHealthBar(GameData& gameData, SDL_Renderer* renderer) {
+	SDL_Rect remainingHP = {};
+	SDL_Rect missingHP = {};
+	SDL_Rect outlineHP = {};
+	int remainingHPOffset = 0;
+	int missingHPOffset = 0;
+
+	double remainingHPPercent = (double)gameData.player.hp / (double)gameData.player.maxHP;
+	remainingHP.w = (int)(HEALTH_BAR_W * remainingHPPercent);
+	remainingHPOffset = (HEALTH_BAR_W - remainingHP.w) / 2;
+	remainingHP.h = HEALTH_BAR_H;
+	remainingHP.x = (int)(gameData.player.position.x - remainingHPOffset);
+	remainingHP.y = (int)(gameData.player.position.y + 47);
+
+	double missingHPPercent = 1 - remainingHPPercent;
+	missingHP.w = (int)(HEALTH_BAR_W * missingHPPercent);
+	missingHPOffset = (HEALTH_BAR_W - missingHP.w) / 2;
+	missingHP.h = HEALTH_BAR_H;
+	missingHP.x = (int)(gameData.player.position.x + missingHPOffset);
+	missingHP.y = (int)(gameData.player.position.y + 47);
+
+	outlineHP.w = HEALTH_BAR_W;
+	outlineHP.h = HEALTH_BAR_H;
+	outlineHP.x = (int)(gameData.player.position.x);
+	outlineHP.y = (int)(gameData.player.position.y + 47);
+
+	SDL_Rect remainingHPRect = convertCameraSpaceScreenWH(gameData.camera, remainingHP);
+	drawFilledRectangle(renderer, &remainingHPRect, 0, 255, 255, 255);
+
+	SDL_Rect missingHPRect = convertCameraSpaceScreenWH(gameData.camera, missingHP);
+	drawFilledRectangle(renderer, &missingHPRect, 255, 0, 0, 255);
+
+	SDL_Rect outlineHPRect = convertCameraSpaceScreenWH(gameData.camera, outlineHP);;
+	drawNonFilledRectangle(renderer, &outlineHPRect, 0, 0, 0, 255);
+}
+
+void destroyEnemies(GameData& gameData) {
+	for (int i = 0; i < gameData.enemies.size(); i++) {
+		gameData.enemies[i].destroyed = true;
+	}
 }
