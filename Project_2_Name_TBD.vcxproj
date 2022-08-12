@@ -150,11 +150,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Contrib\Render.h" />
     <ClInclude Include="Source\Perlin.h" />
     <ClInclude Include="Source\Sprite.h" />
     <ClInclude Include="stb_image.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Contrib\Render.cpp" />
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\Sprite.cpp" />
   </ItemGroup>

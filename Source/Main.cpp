@@ -1,3 +1,4 @@
+
 #include "SDL.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -109,7 +110,7 @@ int main(int argc, char** argv) {
 	SDL_Init(SDL_INIT_VIDEO);
 	window = SDL_CreateWindow("Undead Legends",
 		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-		RESOLUTION_X, RESOLUTION_Y, SDL_WINDOW_SHOWN);
+		RESOLUTION_X, RESOLUTION_Y, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
 
 	// -1 = default gpu
 	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1,
