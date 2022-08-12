@@ -10,6 +10,8 @@ const int TILE_SIZE = 32;
 const double GRAVITY = 2000;
 const int HEALTH_BAR_W = 55;
 const int HEALTH_BAR_H = 8;
+const int EXP_BAR_W = RESOLUTION_X - 20;
+const int EXP_BAR_H = 25;
 
 struct Vector {
 	double		x;
@@ -34,8 +36,8 @@ double angleFromDirection(Vector a);
 
 enum TileType {
 	TILE_ROCK,
-	TILE_GRASS,
 	TILE_DIRT,
+	TILE_GRASS,
 
 	TILE_COUNT
 };
@@ -45,6 +47,13 @@ enum EntityType {
 	ENTITY_ENEMY,
 
 	ENTITY_COUNT
+};
+
+enum WeaponType {
+	WEAPON_SHADOW_ORB,
+	WEAPON_SPIKE,
+
+	WEAPON_COUNT
 };
 
 struct Image {
@@ -83,20 +92,35 @@ struct Entity {
 
 	int			hp;
 	int			maxHP;
+
+	int			frames;
+	int			speed;
+	bool		animated;
 };
 
 struct Character : Entity {
+	int			experience;
+	int			level;
+	int			levelUp;
 };
 
 struct Enemy : Entity {
 	bool		destroyed = false;
 	int			damage;
 	double		timeUntilDamage;
+	double		timeUntilDamageCG;
 };
 
 struct Weapon : Entity {
+	WeaponType	weaponType;
 	double		lifeTime;
 	int			damage;
+	bool		fireball;
+	bool		fireballAOE;
+};
+
+struct WeaponAOE : Weapon {
+	bool		aoe;	
 };
 
 struct ExperienceOrb : Entity {
@@ -113,16 +137,28 @@ struct Tile {
 	Vector				position;
 };
 
+struct ProceduralTile {
+	Vector				position;
+	int					type;
+};
+
 struct GameData {
-	SDL_Renderer*		renderer;
+	SDL_Renderer* renderer;
 
 	Character					player;
 	Camera						camera;
+	Weapon						consecratedGround;
 	std::vector<Enemy>			enemies;
 	std::vector<Weapon>			weapon;
+	std::vector<WeaponAOE>		weaponAOE;
 	std::vector<DamageNumber>	damageNumbers;
 	std::vector<ExperienceOrb>	experienceOrbs;
+	Image						weaponType[WEAPON_COUNT];
 	Image						tileTypeArray[TILE_COUNT];
+};
+
+struct Font {
+	
 };
 
 void myMemcpy(void* destination, void const* source, size_t size);
@@ -141,11 +177,13 @@ Image loadFont(SDL_Renderer* renderer, const char* fileName);
 
 double returnSpriteSize(Image image);
 
-Character createCharacter(Image image, int healthPoints);
+Character createCharacter(Image image, int healthPoints, bool animated, int speed, int frames);
 
 float randomFloat(float min, float max);
 
 void updateEntityPosition(Entity* entity, double delta);
+
+void updateExperienceOrbPosition(GameData& gameData, ExperienceOrb* experienceOrb, double speed, double delta);
 
 double dotProduct(Vector a, Vector b);
 
@@ -157,19 +195,31 @@ SDL_Rect convertCameraSpaceScreenWH(Camera& camera, SDL_Rect worldSpace);
 
 void drawEntity(GameData& gameData, Entity& entity);
 
+void drawEntityAnimated(GameData& gameData, Entity& entity, bool right);
+
+void drawCharacterIdle(GameData& gameData, Entity& entity, bool right);
+
+void drawConsecratedGround(GameData& gameData, Entity& entity);
+
 int getRandomTile();
 
-void drawTile(GameData& gameData, Tile tile);
+void drawTile(GameData& gameData, Tile tile, float perlin);
 
-void createEnemy(Image image, Vector position, GameData* gameData, int healthPoints, int damage);
+void drawProceduralTile(GameData& gameData, Image image, ProceduralTile tile, int totalTiles);
+
+void createEnemy(Image image, Vector position, GameData* gameData, int healthPoints, int damage, bool animated, int speed, int frames);
 
 Weapon createWeapon(Image image, int damage);
+
+Weapon createWeaponConsecratedGround(Image image, int damage);
 
 int closestEnemy(Character player, GameData* gameData);
 
 void drawCircle(GameData& gameData, Vector position, double radius, int circleOffsetY);
 
 void drawString(Color color, GameData& gameData, SDL_Renderer* renderer, Image* textImage, int size, std::string string, int x, int y);
+
+void drawStringWorldSpace(Color color, GameData& gameData, SDL_Renderer* renderer, Image* textImage, int size, std::string string, int x, int y);
 
 DamageNumber createDamageNumber(EntityType type, int damageNumber, Vector position, Vector velocity, int textSize, double lifeTime);
 
@@ -182,5 +232,7 @@ void drawFilledRectangle(SDL_Renderer* renderer, SDL_Rect* rect, int red, int gr
 void drawNonFilledRectangle(SDL_Renderer* renderer, SDL_Rect* rect, int red, int green, int blue, int alpha);
 
 void drawHealthBar(GameData& gameData, SDL_Renderer* renderer);
+
+void drawExperienceBar(GameData& gameData, SDL_Renderer* renderer);
 
 void destroyEnemies(GameData& gameData);
