@@ -52,10 +52,14 @@ enum EntityType {
 };
 
 enum WeaponType {
-	WEAPON_SHADOW_ORB,
-	WEAPON_SPIKE,
+	WT_PROJECTILE_SPIKE,
+	WT_PROJECTILE_SHADOW_ORB,
+	WT_PROJECTILE_FIREBALL,
 
-	WEAPON_COUNT
+	WT_AOE_CONSECRATED_GROUND,
+	WT_AOE_RESIDUAL_FIREBALL,
+
+	WEAPON_TYPE_COUNT
 };
 
 struct Image {
@@ -109,20 +113,23 @@ struct Character : Entity {
 struct Enemy : Entity {
 	bool		destroyed = false;
 	int			damage;
-	double		timeUntilDamage;
-	double		timeUntilDamageCG;
+	double		timeUntilDamageDealt;
+	double		timeUntilDamageTakenAOE;
+	double		timeUntilDamageTakenProjectile;
 };
 
 struct Weapon : Entity {
-	WeaponType	weaponType;
 	double		lifeTime;
 	int			damage;
-	bool		fireball;
-	bool		fireballAOE;
 };
 
-struct WeaponAOE : Weapon {
-	bool		aoe;	
+struct AOE : Weapon {
+	WeaponType	aoeType;
+};
+
+struct Projectile : Weapon {
+	int			piercingLayer;
+	WeaponType	projectileType;
 };
 
 struct ExperienceOrb : Entity {
@@ -145,17 +152,14 @@ struct ProceduralTile {
 };
 
 struct GameData {
-	SDL_Renderer* renderer;
-
+	SDL_Renderer*				renderer;
 	Character					player;
 	Camera						camera;
-	Weapon						consecratedGround;
 	std::vector<Enemy>			enemies;
-	std::vector<Weapon>			weapon;
-	std::vector<WeaponAOE>		weaponAOE;
+	std::vector<Projectile>		projectiles;
+	std::vector<AOE>			aoe;
 	std::vector<DamageNumber>	damageNumbers;
 	std::vector<ExperienceOrb>	experienceOrbs;
-	Image						weaponType[WEAPON_COUNT];
 	Image						tileTypeArray[TILE_COUNT];
 };
 
@@ -179,7 +183,7 @@ Image loadFont(SDL_Renderer* renderer, const char* fileName);
 
 double returnSpriteSize(Image image);
 
-Character createCharacter(Image image, int healthPoints, bool animated, int speed, int frames);
+Character createCharacter(GameData& gameData, Image image, int healthPoints, bool animated, int speed, int frames);
 
 float randomFloat(float min, float max);
 
@@ -201,7 +205,7 @@ void drawEntityAnimated(GameData& gameData, Entity& entity, bool right);
 
 void drawCharacterIdle(GameData& gameData, Entity& entity, bool right);
 
-void drawConsecratedGround(GameData& gameData, Entity& entity);
+// void drawConsecratedGround(GameData& gameData, Entity& entity);
 
 int getRandomTile();
 
@@ -211,9 +215,11 @@ void drawProceduralTile(GameData& gameData, Image image, ProceduralTile tile, in
 
 void createEnemy(Image image, Vector position, GameData* gameData, int healthPoints, int damage, bool animated, int speed, int frames);
 
-Weapon createWeapon(Image image, int damage);
+Projectile createProjectile(WeaponType projectileType, Image image, int damage, int piercingLayer);
 
-Weapon createWeaponConsecratedGround(Image image, int damage);
+AOE createAOE(WeaponType aoeType, Image image, int damage, int duration);
+
+// AOE createAOEWorldSpace(Image image, int damage, int duration);
 
 int closestEnemy(Character player, GameData* gameData);
 

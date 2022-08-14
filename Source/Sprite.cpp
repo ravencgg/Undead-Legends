@@ -211,8 +211,10 @@ double returnSpriteSize(Image image) {
 	return maxDistance;
 }
 
-Character createCharacter(Image image, int healthPoints, bool animated, int speed, int frames) {
+Character createCharacter(GameData& gameData, Image image, int healthPoints, bool animated, int speed, int frames) {
 	Character character = {};
+	gameData.player.position.x = RESOLUTION_X / 2;
+	gameData.player.position.y = RESOLUTION_Y / 2;
 	character.sprite = createSprite(image);
 	character.radius = returnSpriteSize(image) / 2;
 	character.hp = healthPoints;
@@ -444,7 +446,7 @@ void createEnemy(Image image, Vector position, GameData* gameData, int healthPoi
 	enemy.hp = healthPoints;
 	enemy.maxHP = healthPoints;
 	enemy.damage = damage;
-	enemy.timeUntilDamage = 0;
+	enemy.timeUntilDamageDealt = 0;
 	enemy.animated = animated;
 	enemy.frames = frames;
 	enemy.speed = speed;
@@ -452,21 +454,25 @@ void createEnemy(Image image, Vector position, GameData* gameData, int healthPoi
 	gameData->enemies.push_back(enemy);
 }
 
-Weapon createWeapon(Image image, int damage) {
-	Weapon weapon = {};
-	weapon.sprite = createSprite(image);
-	weapon.radius = returnSpriteSize(image);
-	weapon.lifeTime = 6;
-	weapon.damage = damage;
-	return weapon;
+Projectile createProjectile(WeaponType projectileType, Image image, int damage, int piercingLayers) {
+	Projectile projectile = {};
+	projectile.sprite = createSprite(image);
+	projectile.radius = returnSpriteSize(image);
+	projectile.lifeTime = 20;
+	projectile.damage = damage;
+	projectile.projectileType = projectileType;
+	projectile.piercingLayer = piercingLayers;
+	return projectile;
 }
 
-Weapon createWeaponConsecratedGround(Image image, int damage) {
-	Weapon weapon = {};
-	weapon.sprite = createSprite(image);
-	weapon.radius = returnSpriteSize(image);
-	weapon.damage = damage;
-	return weapon;
+AOE createAOE(WeaponType aoeType, Image image, int damage, int lifeTime) {
+	AOE aoe = {};
+	aoe.sprite = createSprite(image);
+	aoe.radius = returnSpriteSize(image);
+	aoe.damage = damage;
+	aoe.lifeTime = lifeTime;
+	aoe.aoeType = aoeType;
+	return aoe;
 }
 
 int closestEnemy(Character player, GameData* gameData) {

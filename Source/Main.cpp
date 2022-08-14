@@ -1,4 +1,3 @@
-
 #include "SDL.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -24,23 +23,27 @@
 // DONE: Outline the current HP bar with a black rectangle
 // DONE: Change game font -> will also change the text scaling. Tried downloading/installing a tff. 
 //			ascii bitmap font
-// DONE: Impliment consecrated ground
+// DONE: Implement consecrated ground
 // DONE: Exp collision	
 // DONE: Develop more sprites / animations
 // DONE: Draw animations for a player model and an enemy model
 // DONE: Enemy drawings / facing directions / animations
+// DONE: Set position in create character function
+// DONE: Drawing a string with numbers on screen implementation
+// DONE: Improve weapon categorization and selections
 
-// TODO: Look into TTF fonts - Slug font renderer
-// TODO: Drawing a string with numbers on screen implimentation
+// CHRIS WIP
 // TODO: Develop a better map
+// TODO: Look into TTF fonts - Slug font renderer
 // TODO: Add sound and music? Where to find these? Commission people? Free sites?
-// TODO: Improve weapon categorization and selections
+// TODO: Adding different levels
 
-// TODO: Virtual function for weapons (Bullet class, missle class)
+// TODO: Initialize the audio library. Function calls, point to a file, etc.
+// TODO: POWER UP: Increase number of projectiles fired
+// TODO: Virtual function for weapons (Bullet class, projectile class)
 // TODO: Use perlin noise to draw the background layer. Draw everything else on top of it. 
 //			you can then sample what the perlin noise generated and decide what to draw 
 //			on top of it
-// TODO: Set position in create character function
 // TODO: Make only one drawString function (w and h should be a parameter in a struct)
 // TODO: Merge drawEnemyAnimated and drawCharacterAnimated - Only have 1 bool
 // TODO: Offset enemy animations with a random number
@@ -71,6 +74,7 @@ bool left = false;
 bool right = false;
 bool facingRight = false;
 double fireTime = 0;
+double fireTimeAOE = 0;
 const int DAMAGE_NUMBER_SIZE_E = 1;
 const int DAMAGE_NUMBER_SIZE_P = 1;
 const double DAMAGE_NUMBER_LIFETIME = .75;
@@ -81,28 +85,30 @@ int experienceOrbExperience = 50;
 int ENEMYSPAWNAMOUNT = 50;
 bool consecratedGround = false;
 int totalEnemiesKilled = 0;
-bool fireball = false;
+
+double projectileDamageDelay = 1;
 
 // Spike
 int weaponDamageSpike = 50;
-double attackSpeedSpike = 1;
+double attackSpeedSpike = .5;
 double projectileSpeedSpike = 300;
 
 // Shadow Orb
-int weaponDamageShadowOrb = 100;
-double attackSpeedShadowOrb = 2;
-double projectileSpeedShadowOrb = 150;
+int weaponDamageShadowOrb = 50;
+double attackSpeedShadowOrb = 1;
+double projectileSpeedShadowOrb = 250;
 
 // Consecrated Ground
-int weaponDamageConsecratedGround = 100;
-double damageDelayConsecratedGround = 1;
+int weaponDamageConsecratedGround = 25;
+double damageDelayConsecratedGround = .5;
 
 // Fireball
-int weaponDamageFireball = 100;
+int weaponDamageFireball = 75;
 double attackSpeedFireball = 5;
-double projectileSpeedFireball = 100;
-int weaponDamageFireballAOE = 20;
-int weaponDurationFireballAOE = 5;
+double projectileSpeedFireball = 200;
+int weaponLifeTimeFireballAOE = 15;
+int weaponDamageFireballAOE = 10;
+double weaponFireballDamageDelay = .5;
 
 int main(int argc, char** argv) {
 
@@ -148,12 +154,15 @@ int main(int argc, char** argv) {
 	Image weaponShadowOrb = loadImage(renderer, "Assets/Weapon_ShadowOrb_1.png");
 	Image weaponConsecratedGround = loadImage(renderer, "Assets/Weapon_Consecrated_Ground_1.png");
 	Image weaponFireball = loadImage(renderer, "Assets/Weapon_Fireball_1.png");
-	Image weaponFireballAOE = loadImage(renderer, "Assets/Weapon_Fireball_AOE_1.png");
-
+	// Assets/Weapon_Fireball_AOE_1.png
+	Image weaponFireballAOE = loadImage(renderer, "Assets/Weapon_Fireball_AOE_6.png");
 	Image currentWeaponSelected = weaponSpike;
+
+	WeaponType weaponType = WT_PROJECTILE_SPIKE;
 	int weaponDamage = weaponDamageSpike;
 	double attackSpeed = attackSpeedSpike;
 	double projectileSpeed = projectileSpeedSpike;
+	int piercingLayers = 0;
 
 	Image experienceOrbImage = loadImage(renderer, "Assets/Experience_Orb_1.png");
 	// Image font = loadFont(renderer, "Assets/Font_1.png");
@@ -165,9 +174,7 @@ int main(int argc, char** argv) {
 	gameData.tileTypeArray[TILE_DIRT] = loadImage(renderer, "Assets/dirtTile.png");
 	gameData.tileTypeArray[TILE_ROCK] = loadImage(renderer, "Assets/rockTile.png");
 
-	Image dirtGrassSpriteSheet = loadImage(renderer, "Assets/Tiles_Dirt_Grass_Sprite_Sheet.png");
-
-	gameData.player = createCharacter(characterDemonAnimated, 100, false, 300, 3);
+	gameData.player = createCharacter(gameData, characterDemonAnimated, 100, false, 300, 3);
 	gameData.player.position.x = RESOLUTION_X / 2;
 	gameData.player.position.y = RESOLUTION_Y / 2;
 
@@ -227,41 +234,26 @@ int main(int argc, char** argv) {
 
 				// Characters
 				case SDLK_1:
-					gameData.player = createCharacter(characterDemonAnimated, 100, true, 300, 3);
-					gameData.player.position.x = RESOLUTION_X / 2;
-					gameData.player.position.y = RESOLUTION_Y / 2;
+					gameData.player = createCharacter(gameData, characterDemonAnimated, 100, true, 300, 3);
 					break;
 				case SDLK_2:
-					gameData.player = createCharacter(characterGhoul, 100, false, 300, 1);
-					gameData.player.position.x = RESOLUTION_X / 2;
-					gameData.player.position.y = RESOLUTION_Y / 2;
+					gameData.player = createCharacter(gameData, characterGhoul, 100, false, 300, 1);
 					break;
 				case SDLK_3:
-					gameData.player = createCharacter(characterMaiden, 100, false, 300, 1);
-					gameData.player.position.x = RESOLUTION_X / 2;
-					gameData.player.position.y = RESOLUTION_Y / 2;
+					gameData.player = createCharacter(gameData, characterMaiden, 100, false, 300, 1);
 					break;
 				case SDLK_4:
-					gameData.player = createCharacter(characterVampireA, 100, false, 300, 1);
-					gameData.player.position.x = RESOLUTION_X / 2;
-					gameData.player.position.y = RESOLUTION_Y / 2;
+					gameData.player = createCharacter(gameData, characterVampireA, 100, false, 300, 1);
 					break;
 				case SDLK_5:
-					gameData.player = createCharacter(characterVampireB, 100, false, 300, 1);
-					gameData.player.position.x = RESOLUTION_X / 2;
-					gameData.player.position.y = RESOLUTION_Y / 2;
+					gameData.player = createCharacter(gameData, characterVampireB, 100, false, 300, 1);
 					break;
 				case SDLK_6:
-					gameData.player = createCharacter(characterFrankensteinCreation, 100, false, 300, 1);
-					gameData.player.position.x = RESOLUTION_X / 2;
-					gameData.player.position.y = RESOLUTION_Y / 2;
+					gameData.player = createCharacter(gameData, characterFrankensteinCreation, 100, false, 300, 1);
 					break;
 				case SDLK_7:
-					gameData.player = createCharacter(characterSkeleton, 100, false, 300, 1);
-					gameData.player.position.x = RESOLUTION_X / 2;
-					gameData.player.position.y = RESOLUTION_Y / 2;
-					break;
-					
+					gameData.player = createCharacter(gameData, characterSkeleton, 100, false, 300, 1);
+					break;	
 
 				// Enemies
 				case SDLK_z:
@@ -275,33 +267,36 @@ int main(int argc, char** argv) {
 
 				// Weapons
 				case SDLK_r:
-					fireball = false;
-					consecratedGround = false;
+					weaponType = WT_PROJECTILE_SPIKE;
+					consecratedGround = false;					
 					currentWeaponSelected = weaponSpike;
 					weaponDamage = weaponDamageSpike;
 					attackSpeed = attackSpeedSpike;
 					projectileSpeed = projectileSpeedSpike;
+					piercingLayers = 0;
 					break;
 				case SDLK_t:
-					fireball = false;
+					weaponType = WT_PROJECTILE_SHADOW_ORB;
 					consecratedGround = false;
 					currentWeaponSelected = weaponShadowOrb;
 					weaponDamage = weaponDamageShadowOrb;
 					attackSpeed = attackSpeedShadowOrb;
 					projectileSpeed = projectileSpeedShadowOrb;
+					piercingLayers = 2;
 					break;
 				case SDLK_y:
-					fireball = false;
+					weaponType = WT_AOE_CONSECRATED_GROUND;
 					consecratedGround = true;
 					weaponDamage = weaponDamageConsecratedGround;
 					break;
 				case SDLK_u:
-					fireball = true;
+					weaponType = WT_PROJECTILE_FIREBALL;
 					consecratedGround = false;
 					currentWeaponSelected = weaponFireball;
 					weaponDamage = weaponDamageFireball;
 					attackSpeed = attackSpeedFireball;
 					projectileSpeed = projectileSpeedFireball;
+					piercingLayers = 0;
 					break;
 
 				// Destroy
@@ -373,68 +368,149 @@ int main(int argc, char** argv) {
 		}
 
 		// Update weapon position
-		for (int i = 0; i < gameData.weapon.size(); i++) {
-			updateEntityPosition(&gameData.weapon[i], deltaTime);
+		for (int i = 0; i < gameData.projectiles.size(); i++) {
+			updateEntityPosition(&gameData.projectiles[i], deltaTime);
 		}
+		// Update AOE position
+
 		// Update Experience Orb position
 		for (int i = 0; i < gameData.experienceOrbs.size(); i++) {
 			updateExperienceOrbPosition(gameData, &gameData.experienceOrbs[i], EXPERIENCE_ORB_SPEED, deltaTime);
 		}
 
-		// Weapon firing at nearest enemy
-		if (!consecratedGround) {
+		bool playerTakingDamage = false;
+
+		for (int i = 0; i < gameData.enemies.size(); i++) {
+			if (gameData.enemies[i].timeUntilDamageDealt > 0) {
+				gameData.enemies[i].timeUntilDamageDealt -= deltaTime;
+			}
+			if (gameData.enemies[i].timeUntilDamageTakenAOE > 0) {
+				gameData.enemies[i].timeUntilDamageTakenAOE -= deltaTime;
+			}
+			if (gameData.enemies[i].timeUntilDamageTakenProjectile > 0) {
+				gameData.enemies[i].timeUntilDamageTakenProjectile -= deltaTime;
+			}
+		}
+
+		// Create Projectile and fire at nearest enemy
+		if (weaponType == WT_PROJECTILE_SPIKE ||
+			weaponType == WT_PROJECTILE_SHADOW_ORB ||
+			weaponType == WT_PROJECTILE_FIREBALL) {
 			if (gameData.player.hp > 0) {
 				if (fireTime <= 0) {
 					int nearestEnemy = closestEnemy(gameData.player, &gameData);
 					if (nearestEnemy >= 0) {
-						Weapon currentWeaponInUse = createWeapon(currentWeaponSelected, weaponDamage);
-						currentWeaponInUse.position = gameData.player.position;;
+						Projectile currentWeapon = createProjectile(weaponType, currentWeaponSelected, weaponDamage, piercingLayers);
+						currentWeapon.position = gameData.player.position;;
 						Vector offset = {};
 						// Calculates the vector from the player to the enemy (enemy <--- player)
 						offset = gameData.enemies[nearestEnemy].position - gameData.player.position;
-						currentWeaponInUse.velocity = normalize(offset);
-						currentWeaponInUse.velocity *= projectileSpeed;
+						currentWeapon.velocity = normalize(offset);
+						currentWeapon.velocity *= projectileSpeed;
 						fireTime = attackSpeed;
-						currentWeaponInUse.angle = angleFromDirection(currentWeaponInUse.velocity);
-						gameData.weapon.push_back(currentWeaponInUse);
+						currentWeapon.angle = angleFromDirection(currentWeapon.velocity);
+						gameData.projectiles.push_back(currentWeapon);
 					}
 				}
 			}
 		}
 
-		if (consecratedGround) {
+		// Create AOE_CONSECRATED_GROUND
+		if (weaponType == WT_AOE_CONSECRATED_GROUND) {
 			if (gameData.player.hp > 0) {
-				gameData.consecratedGround = createWeaponConsecratedGround(weaponConsecratedGround, weaponDamageConsecratedGround);
-				gameData.consecratedGround.position = gameData.player.position;
+				for (int i = 0; i < gameData.aoe.size(); i++) {
+					if (gameData.aoe[i].aoeType == WT_AOE_CONSECRATED_GROUND) {
+						gameData.aoe[i].position = gameData.player.position;
+						goto endLoop;
+					}
+				}
+				AOE aoe = createAOE(weaponType, weaponConsecratedGround, weaponDamageConsecratedGround, INT16_MAX);
+				aoe.position = gameData.player.position;
+				gameData.aoe.push_back(aoe);
+			}
+		}
+		endLoop:
+
+		// Destroy AOE_CONSECRATED_GROUND
+		if (weaponType != WT_AOE_CONSECRATED_GROUND) {
+			if (gameData.player.hp > 0) {
+				for (int i = 0; i < gameData.aoe.size(); i++) {
+					if (gameData.aoe[i].aoeType == WT_AOE_CONSECRATED_GROUND) {
+						gameData.aoe[i].lifeTime = 0;
+					}
+				}
 			}
 		}
 
-		// Weapon collision with enemy
-		for (int i = 0; i < gameData.weapon.size(); i++) {
+		// Projectile collision with enemy
+		for (int i = 0; i < gameData.projectiles.size(); i++) {
 			for (int j = 0; j < gameData.enemies.size(); j++) {
-				double distanceBetween = distance(gameData.weapon[i].position, gameData.enemies[j].position);
-				double radiusSum = gameData.weapon[i].radius + gameData.enemies[j].radius;
-				if (distanceBetween < radiusSum) {
-					if (gameData.enemies[j].hp > 0) {
-						Vector numberVelocity = {};
-
-						DamageNumber damageNumber = createDamageNumber(ENTITY_ENEMY, gameData.weapon[i].damage, gameData.enemies[j].position, 
-							{ randomFloat(300, -300), randomFloat(-600, -300) }, DAMAGE_NUMBER_SIZE_E, DAMAGE_NUMBER_LIFETIME);
-						gameData.damageNumbers.push_back(damageNumber);
-						gameData.enemies[j].hp -= gameData.weapon[i].damage;
-						if (!gameData.weapon[i].fireballAOE) {
-							gameData.weapon[i].lifeTime = 0;
+				if (gameData.enemies[j].timeUntilDamageTakenProjectile <= 0) {
+					double distanceBetween = distance(gameData.projectiles[i].position, gameData.enemies[j].position);
+					double radiusSum = gameData.projectiles[i].radius + gameData.enemies[j].radius;
+					if (distanceBetween < radiusSum) {
+						if (gameData.enemies[j].hp > 0) {
+							Vector numberVelocity = {};
+							DamageNumber damageNumber = createDamageNumber(ENTITY_ENEMY, gameData.projectiles[i].damage, gameData.enemies[j].position,
+								{ randomFloat(300, -300), randomFloat(-600, -300) }, DAMAGE_NUMBER_SIZE_E, DAMAGE_NUMBER_LIFETIME);
+							gameData.damageNumbers.push_back(damageNumber);
+							gameData.enemies[j].hp -= gameData.projectiles[i].damage;
+							if (gameData.projectiles[i].piercingLayer > 0) {
+								gameData.projectiles[i].piercingLayer -= 1;
+								gameData.enemies[j].timeUntilDamageTakenProjectile = projectileDamageDelay;
+							}
+							else {
+								gameData.projectiles[i].lifeTime = 0;
+							}
+							if (gameData.projectiles[i].projectileType == WT_PROJECTILE_FIREBALL) {
+								if (gameData.projectiles[i].lifeTime <= 0) {
+									AOE aoe = createAOE(WT_AOE_RESIDUAL_FIREBALL, weaponFireballAOE, weaponDamageFireballAOE, weaponLifeTimeFireballAOE);
+									aoe.position = gameData.enemies[j].position;
+									// aoe.angle = angleFromDirection(gameData.projectiles[i].velocity);
+									gameData.aoe.push_back(aoe);
+								}
+							}
+							if (gameData.enemies[j].hp <= 0) {
+								gameData.enemies[j].destroyed = true;
+								totalEnemiesKilled += 1;
+								// Experience Orbs Vector
+								ExperienceOrb experienceOrb = createExperienceOrb(gameData, experienceOrbImage,
+									gameData.enemies[j].position.x, gameData.enemies[j].position.y, EXPERIENCE_ORB_LIFETIME);
+								gameData.experienceOrbs.push_back(experienceOrb);
+							}
+							// Knock back enemies
+							gameData.enemies[j].velocity = gameData.projectiles[i].velocity;
+							double length = sqrt(gameData.enemies[j].velocity.x * gameData.enemies[j].velocity.x + gameData.enemies[j].velocity.y * gameData.enemies[j].velocity.y);
+							gameData.enemies[j].velocity.x /= length;
+							gameData.enemies[j].velocity.y /= length;
+							if (gameData.projectiles[i].projectileType == WT_PROJECTILE_FIREBALL) {
+								gameData.enemies[j].velocity = gameData.enemies[j].velocity * 1200;
+							}
+							else {
+								gameData.enemies[j].velocity = gameData.enemies[j].velocity * 600;
+							}
+							break;
 						}
+					}
+				}
+			}
+		}
 
-						if (gameData.weapon[i].fireball) {
-							Weapon fireballAOE = createWeapon(weaponFireballAOE, weaponDamageFireballAOE);
-							fireballAOE.position = gameData.enemies[i].position;
-							fireTime = attackSpeed;
-							fireballAOE.lifeTime = weaponDurationFireballAOE;
-							fireballAOE.fireballAOE = true;
-							gameData.weapon.push_back(fireballAOE);
+		// AOE Collision with enemy
+		for (int i = 0; i < gameData.aoe.size(); i++) {
+			for (int j = 0; j < gameData.enemies.size(); j++) {
+				if (gameData.enemies[j].timeUntilDamageTakenAOE <= 0) {
+					double distanceBetween = distance(gameData.aoe[i].position, gameData.enemies[j].position);
+					double radiusSum = gameData.aoe[i].radius + gameData.enemies[j].radius;
+					if (distanceBetween < radiusSum) {
+						if (gameData.enemies[j].hp > 0) {
+							Vector numberVelocity = {};
+							DamageNumber damageNumber = createDamageNumber(ENTITY_ENEMY, gameData.aoe[i].damage, gameData.enemies[j].position,
+								{ randomFloat(300, -300), randomFloat(-600, -300) }, DAMAGE_NUMBER_SIZE_E, DAMAGE_NUMBER_LIFETIME);
+							gameData.damageNumbers.push_back(damageNumber);
+							gameData.enemies[j].hp -= gameData.aoe[i].damage;
+							gameData.enemies[j].timeUntilDamageTakenAOE = weaponFireballDamageDelay;
 						}
-
 						if (gameData.enemies[j].hp <= 0) {
 							gameData.enemies[j].destroyed = true;
 							totalEnemiesKilled += 1;
@@ -443,34 +519,25 @@ int main(int argc, char** argv) {
 								gameData.enemies[j].position.x, gameData.enemies[j].position.y, EXPERIENCE_ORB_LIFETIME);
 							gameData.experienceOrbs.push_back(experienceOrb);
 						}
-
-						// Knock back enemies
-						gameData.enemies[j].velocity = gameData.weapon[i].velocity;
-						double length = sqrt(gameData.enemies[j].velocity.x * gameData.enemies[j].velocity.x + gameData.enemies[j].velocity.y * gameData.enemies[j].velocity.y);
-						gameData.enemies[j].velocity.x /= length;
-						gameData.enemies[j].velocity.y /= length;
-						gameData.enemies[j].velocity = gameData.enemies[j].velocity * 600;
-						break;
+						if (gameData.aoe[i].aoeType == WT_AOE_CONSECRATED_GROUND) {
+							// Knock back enemies
+							gameData.enemies[j].velocity.x = gameData.enemies[j].velocity.x * -1;
+							gameData.enemies[j].velocity.y = gameData.enemies[j].velocity.y * -1;
+							double length = sqrt(gameData.enemies[j].velocity.x * gameData.enemies[j].velocity.x +
+								gameData.enemies[i].velocity.y * gameData.enemies[j].velocity.y);
+							gameData.enemies[j].velocity.x /= length;
+							gameData.enemies[j].velocity.y /= length;
+							gameData.enemies[j].velocity = gameData.enemies[j].velocity * 300;
+						}
 					}
 				}
-			}
-		}
-
-		bool playerTakingDamage = false;
-		
-		for (int i = 0; i < gameData.enemies.size(); i++) {
-			if (gameData.enemies[i].timeUntilDamage > 0) {
-				gameData.enemies[i].timeUntilDamage -= deltaTime;
-			}
-			if (gameData.enemies[i].timeUntilDamageCG > 0) {
-				gameData.enemies[i].timeUntilDamageCG -= deltaTime;
 			}
 		}
 
 		// Player collision with enemy
 		if (gameData.player.hp > 0) {
 			for (int i = 0; i < gameData.enemies.size(); i++) {
-				if (gameData.enemies[i].timeUntilDamage <= 0) {
+				if (gameData.enemies[i].timeUntilDamageDealt <= 0) {
 					double distanceBetween = distancePlayer(gameData.player.position, gameData.enemies[i].position);
 					double radiusSum = gameData.player.radius + gameData.enemies[i].radius;
 					if (distanceBetween < radiusSum) {
@@ -478,7 +545,7 @@ int main(int argc, char** argv) {
 						gameData.damageNumbers.push_back(damageNumber);
 						gameData.player.hp -= gameData.enemies[i].damage;
 						playerTakingDamage = true;
-						gameData.enemies[i].timeUntilDamage = .1;
+						gameData.enemies[i].timeUntilDamageDealt = .1;
 					}
 				}
 			}
@@ -500,47 +567,8 @@ int main(int argc, char** argv) {
 			}
 		}
 
-		// Consecrated Ground collision with enemy
-		if (consecratedGround) {
-			for (int i = 0; i < gameData.enemies.size(); i++) {
-				if (gameData.enemies[i].timeUntilDamageCG <= 0) {
-					double distanceBetween = distance(gameData.enemies[i].position, gameData.consecratedGround.position);
-					double radiusSum = gameData.enemies[i].radius + gameData.consecratedGround.radius;
-					if (distanceBetween < radiusSum) {
-						if (gameData.enemies[i].hp > 0) {
-							Vector numberVelocity = {};
-							DamageNumber damageNumber = createDamageNumber(ENTITY_ENEMY, gameData.consecratedGround.damage, gameData.enemies[i].position,
-								{ randomFloat(300, -300), randomFloat(-600, -300) }, DAMAGE_NUMBER_SIZE_E, DAMAGE_NUMBER_LIFETIME);
-							gameData.enemies[i].hp -= gameData.consecratedGround.damage;
-							gameData.damageNumbers.push_back(damageNumber);
-							// Time until hit again
-							gameData.enemies[i].timeUntilDamageCG = damageDelayConsecratedGround;
-							if (gameData.enemies[i].hp <= 0) {
-								gameData.enemies[i].destroyed = true;
-								// Experience Orbs Vector
-								ExperienceOrb experienceOrb = createExperienceOrb(gameData, experienceOrbImage,
-									gameData.enemies[i].position.x, gameData.enemies[i].position.y, EXPERIENCE_ORB_LIFETIME);
-								gameData.experienceOrbs.push_back(experienceOrb);
-								totalEnemiesKilled += 1;
-							}
-							// Knock back enemies
-							gameData.enemies[i].velocity.x = gameData.enemies[i].velocity.x * -1;
-							gameData.enemies[i].velocity.y = gameData.enemies[i].velocity.y * -1;
-							double length = sqrt(gameData.enemies[i].velocity.x * gameData.enemies[i].velocity.x +
-								gameData.enemies[i].velocity.y * gameData.enemies[i].velocity.y);
-							gameData.enemies[i].velocity.x /= length;
-							gameData.enemies[i].velocity.y /= length;
-							gameData.enemies[i].velocity = gameData.enemies[i].velocity * 600;
-							break;
-						}
-					}
-				}
-			}
-		}
-
 		gameData.camera.position = gameData.player.position;
 
-		// SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
 		// Clear what we are drawing to
 		// Anything done before render clear gets erased
 		SDL_RenderClear(renderer);
@@ -548,7 +576,6 @@ int main(int argc, char** argv) {
 
 		double playerPositionX = gameData.player.position.x;
 		double playerPositionY = gameData.player.position.y;
-
 
 		for (int w = 0; w < (RESOLUTION_X / TILE_SIZE) + 2; w++) {
 			for (int h = 0; h < (RESOLUTION_Y / TILE_SIZE) + 2; h++) {
@@ -562,30 +589,26 @@ int main(int argc, char** argv) {
 			}
 		}
 
-#if 0
-		ProceduralTile tile = {};
-		tile.position.x = 50;
-		tile.position.y = 50;
-		tile.type = 0;
-		drawProceduralTile(gameData, dirtGrassSpriteSheet, tile, (dirtGrassSpriteSheet.w / TILE_SIZE));
-#endif
-
-		if (consecratedGround) {
-			drawEntity(gameData, gameData.consecratedGround);
-		}
-
 		drawHealthBar(gameData, renderer);
 
 		Color textColor = {};
 		textColor.r = 255;
 		textColor.g = 255;
 		textColor.b = 255;
-		// std::to_string(totalEnemiesKilled)
 		// Kill tracker
 		drawString(textColor, gameData, gameData.renderer, &font, 1, std::string("Kills: "), 10, 10);
 		drawString(textColor, gameData, gameData.renderer, &font, 1, std::to_string(totalEnemiesKilled), 100, 10);
 
-		// Draw entities
+		// *Draw entities*
+		// Draw AOE
+		for (int i = 0; i < gameData.aoe.size(); i++) {
+			drawEntity(gameData, gameData.aoe[i]);
+			gameData.aoe[i].lifeTime -= deltaTime;
+			// SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+			// drawCircle(renderer, weaponSpikeArray[i].sprite.position, weaponSpikeArray[i].radius);
+		}
+
+		// Draw Player
 		if (gameData.player.hp > 0) {
 			if (gameData.player.animated) {
 				drawEntityAnimated(gameData, gameData.player, facingRight);
@@ -598,6 +621,7 @@ int main(int argc, char** argv) {
 			// drawCircle(gameData, gameData.player.position, gameData.player.radius * EXPERIENCE_RADIUS, 0);
 		}
 
+		// Draw Enemies
 		for (int i = 0; i < gameData.enemies.size(); i++) {
 			// Check to see if the boolean value is true when the enemy was created. If it was, draw it.
 			double damagePercent = (double)gameData.enemies[i].hp / (double)gameData.enemies[i].maxHP;
@@ -627,18 +651,21 @@ int main(int argc, char** argv) {
 		int pixelWidthLeveltracker = levelTracker.size() * 14;
 		drawString(textColor, gameData, renderer, &font, 1, levelTracker, (RESOLUTION_X / 2) - (pixelWidthLeveltracker / 2), 835);
 
-		for (int i = 0; i < gameData.weapon.size(); i++) {
-			drawEntity(gameData, gameData.weapon[i]);
-			gameData.weapon[i].lifeTime -= deltaTime;
+		// Draw Projectiles
+		for (int i = 0; i < gameData.projectiles.size(); i++) {
+			drawEntity(gameData, gameData.projectiles[i]);
+			gameData.projectiles[i].lifeTime -= deltaTime;
 			// SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
 			// drawCircle(renderer, weaponSpikeArray[i].sprite.position, weaponSpikeArray[i].radius);
 		}
 
+		// Draw Damage Numbers
 		for (int i = 0; i < gameData.damageNumbers.size(); i++) {
 			drawDamageNumber(gameData, gameData.damageNumbers[i], &font, deltaTime);
 			gameData.damageNumbers[i].lifeTime -= deltaTime;
 		}
 
+		// Draw Experience Orbs
 		for (int i = 0; i < gameData.experienceOrbs.size(); i++) {
 			drawEntity(gameData, gameData.experienceOrbs[i]);
 			gameData.experienceOrbs[i].lifeTime -= deltaTime;
@@ -655,8 +682,12 @@ int main(int argc, char** argv) {
 			}
 		);
 
-		std::erase_if(gameData.weapon, [](const Weapon& weapon) {
-			return weapon.lifeTime <= 0;
+		std::erase_if(gameData.projectiles, [](const Projectile& projectile) {
+			return projectile.lifeTime <= 0;
+			}
+		);
+		std::erase_if(gameData.aoe, [](const AOE& aoe) {
+			return aoe.lifeTime <= 0;
 			}
 		);
 
