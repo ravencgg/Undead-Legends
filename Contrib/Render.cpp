@@ -142,6 +142,8 @@ enum ShaderType
     Shader_SDFFont,
     Shader_Rectangle,
 
+    Shader_Tilemap,
+
     Shader_Count
 };
 
@@ -547,6 +549,126 @@ void main()
 
 )TERM";
 
+static const char* s_frag_map_shader = R"TERM(
+
+#line )TERM" STRING(__LINE__) R"TERM(
+in vec2 f_uv;
+in vec4 f_color;
+in vec2 f_position;
+
+out vec4 color;
+
+uniform vec2  u_screen_size;
+
+uniform sampler2D layer_zero;
+uniform sampler2D layer_one;
+uniform sampler2D layer_two;
+
+// NOTE: This has been heavily modified from the licensed version.
+// The MIT License
+// Copyright © 2013 Inigo Quilez
+// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+// https://www.youtube.com/c/InigoQuilez
+// https://iquilezles.org
+
+// Simplex Noise (http://en.wikipedia.org/wiki/Simplex_noise), a type of gradient noise
+// that uses N+1 vertices for random gradient interpolation instead of 2^N as in regular
+// latice based Gradient Noise.
+
+// Value    Noise 2D, Derivatives: https://www.shadertoy.com/view/4dXBRH
+// Gradient Noise 2D, Derivatives: https://www.shadertoy.com/view/XdXBRH
+// Value    Noise 3D, Derivatives: https://www.shadertoy.com/view/XsXfRH
+// Gradient Noise 3D, Derivatives: https://www.shadertoy.com/view/4dffRH
+// Value    Noise 2D             : https://www.shadertoy.com/view/lsf3WH
+// Value    Noise 3D             : https://www.shadertoy.com/view/4sfGzS
+// Gradient Noise 2D             : https://www.shadertoy.com/view/XdXGW8
+// Gradient Noise 3D             : https://www.shadertoy.com/view/Xsl3Dl
+// Simplex  Noise 2D             : https://www.shadertoy.com/view/Msf3WH
+// Wave     Noise 2D             : https://www.shadertoy.com/view/tldSRj
+
+#define float2 vec2
+#define float3 vec3
+#define lerp mix
+#define fmod mod
+#define frac fract
+
+// -----------------------------------------------
+float2 hash(float2 p) // replace this by something better
+{
+    float2 np = float2(dot(p,float2(127.1, 311.7)), dot(p, float2(269.5, 183.3)));
+    return -1.0 + 2.0 * frac(sin(fmod(np, 3.14 * 2.0)) * 43758.5453123);
+}
+
+float2 hash(float p) // replace this by something better
+{
+    float2 np = float2(dot(float2(p), float2(127.1, 311.7)), dot(float2(p), float2(269.5, 183.3)));
+    return vec2(-1.0) + 2.0 * frac(sin(fmod(np, 3.14*2.0)) * 43758.5453123);
+}
+
+float simplex_noise2( in float2 p )
+{
+    const float K1 = 0.366025404; // (sqrt(3)-1)/2;
+    const float K2 = 0.211324865; // (3-sqrt(3))/6;
+
+    float2 i = floor( p + (p.x+p.y)*K1 );
+    float2 a = p - i + (i.x+i.y)*K2;
+    float  m = step(a.y,a.x);
+    float2 o = float2(m,1.0-m);
+    float2 b = a - o + K2;
+    float2 c = a - 1.0 + 2.0*K2;
+    float3 h = max(float3(0.5) - float3(dot(a,a), dot(b,b), dot(c,c)), float3(0.0));
+    float3 n = float3(h*h*h*h)*float3(dot(a, hash(i+0.0)), dot(b, hash(i+o)), dot(c, hash(i+1.0)));
+    float3 _70 = float3(70.0);
+    return dot(n, _70);
+}
+
+float simplex_noise(float3 x)
+{
+    // The noise function returns a value in the range -1.0f -> 1.0f
+
+    float3 p = floor(x);
+    float3 f = frac(x);
+
+    f       = f*f*(3.0-2.0*f);
+    float n = p.x + p.y*57.0 + 113.0*p.z;
+
+    return lerp(lerp(lerp( hash(n+0.0), hash(n+1.0),f.x),
+                lerp( hash(n+57.0), hash(n+58.0),f.x),f.y),
+                lerp(lerp( hash(n+113.0), hash(n+114.0),f.x),
+                lerp( hash(n+170.0), hash(n+171.0),f.x),f.y),f.z).x;
+}
+
+float simplex_noise_normalized(float3 x)
+{
+    return simplex_noise(x) * 0.5 + 0.5;
+}
+
+
+void main()
+{
+    vec4 color_0 = texture(layer_zero, f_uv);
+    vec4 color_1 = texture(layer_one, f_uv);
+    vec4 color_2 = texture(layer_two, f_uv);
+
+    float noise = simplex_noise_normalized(vec3(f_uv / 5.0, 1.0));
+    noise = smoothstep(0.5, 0.6, noise);
+
+    vec4 result = color_0;
+    result = color_1 * noise + color_0 * (1.0 - noise);
+
+#if 0
+    if (f_position.x < -0.3)
+        color = color_0;
+    else if (f_position.x < 0.3)
+        color = color_1;
+    else
+        color = color_2;
+#endif
+
+    color = result;
+}
+)TERM";
+
 static void SetDepthMode(DepthMode mode);
 
 struct glShaderConstants
@@ -679,6 +801,8 @@ static bool _CheckGLError(const char* file, int line)
     {
         fprintf(stderr, "%s(%d): GLError %d: %s\n", file, line, error, GLErrorString(error));
         found_error = true;
+
+        assert(false);
     }
     return found_error;
 }
@@ -826,6 +950,34 @@ void LoadFontShader()
 
 }
 
+void LoadMapShader()
+{
+    CheckGLError();
+    Shader* shader = &s_gl->shaders[Shader_Tilemap];
+    shader->handle = LoadShader(s_vert_shader, s_frag_map_shader);
+    LoadShaderUniforms(shader);
+
+    s32 uniform_loc = glGetUniformLocation(shader->handle, "layer_zero");
+    glUseProgram(shader->handle);
+    if (uniform_loc != -1)
+    {
+        glUniform1i(uniform_loc, 0);
+    }
+
+    uniform_loc = glGetUniformLocation(shader->handle, "layer_one");
+    if (uniform_loc != -1)
+    {
+        glUniform1i(uniform_loc, 1);
+    }
+
+    uniform_loc = glGetUniformLocation(shader->handle, "layer_two");
+    if (uniform_loc != -1)
+    {
+        glUniform1i(uniform_loc, 2);
+    }
+    CheckGLError();
+}
+
 static void CheckForExtension(const std::vector<std::string>& extensions, GLExtension extension, const std::string& extension_string)
 {
     for (auto str : extensions)
@@ -965,6 +1117,7 @@ void* R_CreateRenderer(SDL_Window* window)
         LoadCheckerboardShader();
         LoadFontShader();
         LoadRectangleShader();
+        LoadMapShader();
     }
 
     {
@@ -1017,6 +1170,7 @@ void* R_CreateRenderer(SDL_Window* window)
 #endif
 
     SetDepthMode(DepthMode_Ignored);
+    CheckGLError();
     return result;
 }
 
@@ -1057,9 +1211,11 @@ R_Texture* R_CreateTexture(R_PixelFormat format, int access, int width, int heig
     result->format = format;
     result->mod_color = { 1.0f, 1.0f, 1.0f, 1.0f };
     result->blend_mode = BlendMode_Overwrite;
+    CheckGLError();
     glGenTextures(1, &result->handle);
     glBindTexture(result->target, result->handle);
     glTexImage2D(result->target, 0, internal_format, width, height, 0, gl_format, GL_UNSIGNED_BYTE, nullptr);
+    CheckGLError();
     return result;
 }
 
@@ -1273,6 +1429,15 @@ static void SetDefaultMatrix()
 
         Shader* shader = GetActiveShader();
         glUniformMatrix4fv(shader->u_ortho_loc, 1, GL_FALSE, ortho_mat.e);
+    }
+}
+
+static void SetOrthoMatrix(Matrix4* ortho_mat)
+{
+    if (s_gl->active_shader)
+    {
+        Shader* shader = GetActiveShader();
+        glUniformMatrix4fv(shader->u_ortho_loc, 1, GL_FALSE, ortho_mat->e);
     }
 }
 
@@ -1664,6 +1829,69 @@ void R_RenderDrawRect(SDL_Rect* rect)
     R_RenderDrawLine(rect->x + rect->w, rect->y,           rect->x + rect->w, rect->y + rect->h);
     R_RenderDrawLine(rect->x + rect->w, rect->y + rect->h, rect->x,           rect->y + rect->h);
     R_RenderDrawLine(rect->x,           rect->y + rect->h, rect->x,           rect->y - 1);
+}
+
+void R_RenderTileMap(int view_center_x, int view_center_y, int view_width, int view_height, R_Texture** textures, int num_image_layers)
+{
+    //   0     1
+    //
+    //
+    //   2     3
+
+    Vector2 positions[4] = {
+        { 0.0f, 0.0f },
+        { 1.0f, 0.0f },
+        { 0.0f, 1.0f },
+        { 1.0f, 1.0f },
+    };
+
+    float tile_size = 64.0f;
+    Vector2 uv_min = { (float)view_center_x - view_width / 2.0f, (float) view_center_y - view_height / 2.0f };
+    uv_min.x /= tile_size;
+    uv_min.y /= tile_size;
+    Vector2 uv_max = uv_min;
+    uv_max.x += (float)view_width / tile_size;
+    uv_max.y += (float)view_height / tile_size;
+
+    for (int i = 0; i < num_image_layers; ++i)
+    {
+        glActiveTexture(GL_TEXTURE0 + i);
+        R_Texture* t = textures[i];
+        glBindTexture(t->target, t->handle);
+        SetSampler(t->target, Sampler_Linear);
+        SetAddressMode(t->target, AddressMode_Wrap);
+        SetBlendMode(BlendMode_Overwrite);
+    }
+    glActiveTexture(GL_TEXTURE0);
+
+    Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+    Vertex vertices[4];
+    vertices[0].position = positions[0];
+    vertices[0].uv       = uv_min;
+    vertices[0].color    = color;
+
+    vertices[1].position = positions[1];
+    vertices[1].uv       = { uv_max.x, uv_min.y };
+    vertices[1].color    = color;
+
+    vertices[2].position = positions[2];
+    vertices[2].uv       = { uv_min.x, uv_max.y };
+    vertices[2].color    = color;
+
+    vertices[3].position = positions[3];
+    vertices[3].uv       = uv_max;
+    vertices[3].color    = color;
+
+    PushVertices(vertices, countof(vertices));
+    SetShader(Shader_Tilemap);
+    UpdateShaderUniforms();
+
+    Matrix4 ortho_mat;
+    MakeOrthoMatrix(&ortho_mat, 0, 1.0f, 1.0f, 0.0f);
+    SetOrthoMatrix(&ortho_mat);
+
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, countof(vertices));
 }
 
 // Enable this to request discrete graphics

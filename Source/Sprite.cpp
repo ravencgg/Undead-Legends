@@ -1,8 +1,12 @@
+
+#include "Sprite.h"
+
 #include "SDL.h"
 #include "stb_image.h"
-#include <stdio.h>
-#include "Sprite.h"
+
+#include <assert.h>
 #include <float.h>
+#include <stdio.h>
 
 double getTime() {
 	return SDL_GetTicks() / 1000.0;
@@ -108,6 +112,7 @@ Image loadImage(SDL_Renderer* renderer, const char* fileName) {
 
 	int x, y, n;
 	unsigned char* data = stbi_load(fileName, &x, &y, &n, 4);
+    assert(data);
 
 	SDL_Texture* texture = SDL_CreateTexture(renderer,
 		SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING,
@@ -417,6 +422,28 @@ void drawTile(GameData& gameData, Tile tile, float perlin) {
 	rect = convertCameraSpace(gameData.camera, rect);
 
 	SDL_RenderCopyEx(gameData.renderer, gameData.tileTypeArray[tile.tileType].texture, NULL, &rect, 0, NULL, SDL_FLIP_NONE);
+}
+
+void drawTilemap(Vector view_center, int view_width, int view_height)
+{
+#if USE_GL
+#define countof(__arr) (sizeof(__arr) / sizeof(__arr[0]))
+
+    static Image image_layers[] = {
+        loadImage(nullptr, "Assets/grassTile.png"),
+        loadImage(nullptr, "Assets/dirtTile.png"),
+        loadImage(nullptr, "Assets/rockTile.png"),
+    };
+    static R_Texture* textures[] = {
+        image_layers[0].texture,
+        image_layers[1].texture,
+        image_layers[2].texture,
+    };
+    static_assert(countof(textures) == countof(image_layers));
+
+    void R_RenderTileMap(int view_center_x, int view_center_y, int view_width, int view_height, R_Texture** textures, int num_layers);
+    R_RenderTileMap(view_center.x, view_center.y, view_width, view_height, textures, countof(textures));
+#endif
 }
 
 void drawProceduralTile(GameData& gameData, Image image, ProceduralTile tile, int totalTiles) {

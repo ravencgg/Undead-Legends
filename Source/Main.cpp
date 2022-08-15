@@ -577,6 +577,7 @@ int main(int argc, char** argv) {
 		double playerPositionX = gameData.player.position.x;
 		double playerPositionY = gameData.player.position.y;
 
+#if 0
 		for (int w = 0; w < (RESOLUTION_X / TILE_SIZE) + 2; w++) {
 			for (int h = 0; h < (RESOLUTION_Y / TILE_SIZE) + 2; h++) {
 				Tile tile = {};
@@ -588,6 +589,9 @@ int main(int argc, char** argv) {
 				drawTile(gameData, tile, perlin);
 			}
 		}
+#else
+        drawTilemap(gameData.camera.position, RESOLUTION_X, RESOLUTION_Y);
+#endif
 
 		drawHealthBar(gameData, renderer);
 

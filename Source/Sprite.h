@@ -210,6 +210,7 @@ void drawCharacterIdle(GameData& gameData, Entity& entity, bool right);
 int getRandomTile();
 
 void drawTile(GameData& gameData, Tile tile, float perlin);
+void drawTilemap(Vector view_center, int view_width, int view_height);
 
 void drawProceduralTile(GameData& gameData, Image image, ProceduralTile tile, int totalTiles);
 
