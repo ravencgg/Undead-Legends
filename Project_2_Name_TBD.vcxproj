@@ -79,8 +79,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Projects\SDL2_image-2.0.5\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Projects\Project_2_Name_TBD\Contrib\soloud\include;C:\Projects\SDL2_image-2.0.5\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Projects\SDL2_image-2.0.5\lib\x64;$(LibraryPath)</LibraryPath>
+    <SourcePath>$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -119,10 +120,11 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>Contrib\sdl\include;Contrib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Contrib\soloud\include;Contrib\sdl\include;Contrib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <DisableSpecificWarnings>%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -150,15 +152,23 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Contrib\Perlin.h" />
     <ClInclude Include="Contrib\Render.h" />
-    <ClInclude Include="Source\Perlin.h" />
+    <ClInclude Include="Source\Constants.h" />
     <ClInclude Include="Source\Sprite.h" />
+    <ClInclude Include="Source\Weapon.h" />
     <ClInclude Include="stb_image.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Contrib\Render.cpp" />
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\Sprite.cpp" />
+    <ClCompile Include="Source\Weapon.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="soloud_lib\soloud_lib.vcxproj">
+      <Project>{e119fbfe-6566-4791-9263-cb6276321346}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

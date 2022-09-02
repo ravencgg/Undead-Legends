@@ -17,10 +17,16 @@
     <ClInclude Include="stb_image.h">
       <Filter>Contrib</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Perlin.h">
+    <ClInclude Include="Contrib\Render.h">
       <Filter>Contrib</Filter>
     </ClInclude>
-    <ClInclude Include="Contrib\Render.h">
+    <ClInclude Include="Source\Weapon.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Constants.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Contrib\Perlin.h">
       <Filter>Contrib</Filter>
     </ClInclude>
   </ItemGroup>
@@ -33,6 +39,9 @@
     </ClCompile>
     <ClCompile Include="Contrib\Render.cpp">
       <Filter>Contrib</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Weapon.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -24,9 +24,13 @@ double angleFromDirection(Vector a) {
 	return result;
 }
 
+double magnitude(Vector a) {
+	return sqrt(a.x * a.x + a.y * a.y);
+}
+
 Vector normalize(Vector a) {
-	double magnitude = sqrt(a.x * a.x + a.y * a.y);
-	Vector normalized = { a.x / magnitude, a.y / magnitude };
+	double m = magnitude(a);
+	Vector normalized = { a.x / m, a.y / m };
 	return normalized;
 }
 
@@ -118,8 +122,7 @@ Image loadImage(SDL_Renderer* renderer, const char* fileName) {
 
 	// Locking the texture gives us a position in memory
 	// While the texture is locked, you can write to the texture
-	int lockTexture = SDL_LockTexture(texture, NULL, &pixels,
-		&pitch);
+	SDL_LockTexture(texture, NULL, &pixels, &pitch);
 
 	myMemcpy(pixels, data, ((size_t)x * (size_t)y * 4));
 
@@ -152,13 +155,13 @@ Image loadFont(SDL_Renderer* renderer, const char* fileName) {
 
 	for (int i = 0; i < totalPixels; i++) {
 		char r = readPixels[0];
-		char g = readPixels[1];
-		char b = readPixels[2];
-		char a = readPixels[3];
+		// char g = readPixels[1];
+		// char b = readPixels[2];
+		// char a = readPixels[3];
 
-		if (r == 0)
+		if (r == 0) {
 			readPixels[3] = 0;
-
+		}
 		readPixels += 4;
 	}
 
@@ -168,7 +171,7 @@ Image loadFont(SDL_Renderer* renderer, const char* fileName) {
 	int pitch;
 	int area = (x * y * 4);
 
-	int lockTexture = SDL_LockTexture(texture, NULL, &pixels, &pitch);
+	SDL_LockTexture(texture, NULL, &pixels, &pitch);
 
 	myMemcpy(pixels, fileData, area);
 
@@ -211,10 +214,10 @@ double returnSpriteSize(Image image) {
 	return maxDistance;
 }
 
-Character createCharacter(GameData& gameData, Image image, int healthPoints, bool animated, int speed, int frames) {
-	Character character = {};
-	gameData.player.position.x = RESOLUTION_X / 2;
-	gameData.player.position.y = RESOLUTION_Y / 2;
+void createCharacter(GameData& gameData, Image image, int healthPoints, bool animated, int speed, int frames) {
+	Character& character = gameData.player;
+	character.position.x = Constants::RESOLUTION_X / 2;
+	character.position.y = Constants::RESOLUTION_Y / 2;
 	character.sprite = createSprite(image);
 	character.radius = returnSpriteSize(image) / 2;
 	character.hp = healthPoints;
@@ -225,7 +228,7 @@ Character createCharacter(GameData& gameData, Image image, int healthPoints, boo
 	character.experience = 0;
 	character.level = 0;
 	character.levelUp = 1000;
-	return character;
+	character.newStaff(new ConsecratedGroundStaff(gameData, &gameData.player));;
 }
 
 float randomFloat(float min, float max) {
@@ -264,18 +267,18 @@ void updateEnemyPosition(Character* player, Enemy* enemy, double delta) {
 	double length = sqrt(enemyToPlayer.x * enemyToPlayer.x + enemyToPlayer.y * enemyToPlayer.y);
 	enemyToPlayer.x /= length;
 	enemyToPlayer.y /= length;
-	Vector enemyAcceleration = (enemyToPlayer * ENEMY_ACCELERATION);
+	Vector enemyAcceleration = (enemyToPlayer * Constants::ENEMY_ACCELERATION);
 
 	// Kinematic Equations
 	// v = v0 + a0t
 	Vector updatedVelocity = enemy->velocity + (enemyAcceleration * delta);
 	double currentLength = sqrt(updatedVelocity.x * updatedVelocity.x + updatedVelocity.y * updatedVelocity.y);
-	if (currentLength > ENEMY_SPEED) {
+	if (currentLength > Constants::ENEMY_SPEED) {
 		if (dotProduct(updatedVelocity, enemyAcceleration) > 0) {
 			updatedVelocity.x /= currentLength;
 			updatedVelocity.y /= currentLength;
 
-			updatedVelocity *= ENEMY_SPEED;
+			updatedVelocity *= Constants::ENEMY_SPEED;
 		}
 	}
 	// x = x0 + v0t
@@ -290,7 +293,7 @@ SDL_Rect convertCameraSpace(Camera& camera, SDL_Rect worldSpace) {
 	cameraSpace.w = worldSpace.w;
 	cameraSpace.h = worldSpace.h;
 
-	Vector toCenter = { RESOLUTION_X / 2.0f, RESOLUTION_Y / 2.0f };
+	Vector toCenter = { Constants::RESOLUTION_X / 2.0f, Constants::RESOLUTION_Y / 2.0f };
 
 	Vector worldSpaceV = { (double)worldSpace.x, (double)worldSpace.y };
 
@@ -309,10 +312,10 @@ SDL_Rect convertCameraSpace(Camera& camera, SDL_Rect worldSpace) {
 SDL_Rect convertCameraSpaceScreenWH(Camera& camera, SDL_Rect worldSpace) {
 	SDL_Rect cameraSpace = {};
 	// Converts the healthbar to the width and height of the screen
-	cameraSpace.w = worldSpace.w * (RESOLUTION_X / 1600);
-	cameraSpace.h = worldSpace.h * (RESOLUTION_Y / 900);
+	cameraSpace.w = worldSpace.w * (Constants::RESOLUTION_X / 1600);
+	cameraSpace.h = worldSpace.h * (Constants::RESOLUTION_Y / 900);
 
-	Vector toCenter = { RESOLUTION_X / 2.0f, RESOLUTION_Y / 2.0f };
+	Vector toCenter = { Constants::RESOLUTION_X / 2.0f, Constants::RESOLUTION_Y / 2.0f };
 
 	Vector worldSpaceV = { (double)worldSpace.x, (double)worldSpace.y };
 
@@ -329,8 +332,24 @@ SDL_Rect convertCameraSpaceScreenWH(Camera& camera, SDL_Rect worldSpace) {
 void drawEntity(GameData& gameData, Entity &entity) {
 	SDL_Rect rect;
 	// rect.x and y is an int. It is truncating the double when it is cast to an int -> (int)
-	rect.w = entity.sprite.width;
-	rect.h = entity.sprite.height;
+
+	if (entity.sprite.width == 80 && entity.sprite.height == 80) {
+		rect.w = entity.sprite.width;
+		rect.h = entity.sprite.height;
+	}
+	else if (entity.sprite.width == 160 && entity.sprite.height == 160) {
+		rect.w = entity.sprite.width / 2;
+		rect.h = entity.sprite.height / 2;
+	}
+	else if (entity.sprite.width == 190 && entity.sprite.height == 190) {
+		rect.w = entity.sprite.width / 2;
+		rect.h = entity.sprite.height / 2;
+	}
+	else {
+		rect.w = entity.sprite.width;
+		rect.h = entity.sprite.height;
+	}
+
 	rect.x = (int)entity.position.x;
 	rect.y = (int)entity.position.y;
 
@@ -347,8 +366,23 @@ void drawEntityAnimated(GameData& gameData, Entity& entity, bool right) {
 	srcRect.h = entity.sprite.height;
 	srcRect.x = srcRect.w * (int)((SDL_GetTicks() / entity.speed) % entity.frames);
 
-	destRect.w = srcRect.w;
-	destRect.h = srcRect.h;
+	if (srcRect.w == 80 && srcRect.h == 80) {
+		destRect.w = srcRect.w;
+		destRect.h = srcRect.h;
+	}
+	else if (srcRect.w == 160 && srcRect.h == 160) {
+		destRect.w = srcRect.w / 2;
+		destRect.h = srcRect.h / 2;
+	}
+	else if (srcRect.w == 190 && srcRect.h == 190) {
+		destRect.w = srcRect.w / 2;
+		destRect.h = srcRect.h / 2;
+	}
+	else {
+		destRect.w = srcRect.w;
+		destRect.h = srcRect.h;
+	}
+
 	destRect.x = (int)entity.position.x;
 	destRect.y = (int)entity.position.y;
 
@@ -368,8 +402,23 @@ void drawCharacterIdle(GameData& gameData, Entity& entity, bool right) {
 	srcRect.w = entity.sprite.width / entity.frames;
 	srcRect.h = entity.sprite.height;
 
-	destRect.w = srcRect.w;
-	destRect.h = srcRect.h;
+	if (srcRect.w == 80 && srcRect.h == 80) {
+		destRect.w = srcRect.w;
+		destRect.h = srcRect.h;
+	}
+	else if (srcRect.w == 160 && srcRect.h == 160) {
+		destRect.w = srcRect.w / 2;
+		destRect.h = srcRect.h / 2 ;
+	}
+	else if (srcRect.w == 190 && srcRect.h == 190) {
+		destRect.w = srcRect.w / 2;
+		destRect.h = srcRect.h / 2;
+	}
+	else {
+		destRect.w = srcRect.w;
+		destRect.h = srcRect.h;
+	}
+
 	destRect.x = (int)entity.position.x;
 	destRect.y = (int)entity.position.y;
 
@@ -400,8 +449,8 @@ int getRandomTile() {
 
 void drawTile(GameData& gameData, Tile tile, float perlin) {
 	SDL_Rect rect;
-	rect.w = TILE_SIZE;
-	rect.h = TILE_SIZE;
+	rect.w = Constants::TILE_SIZE;
+	rect.h = Constants::TILE_SIZE;
 	rect.x = (int)tile.position.x;
 	rect.y = (int)tile.position.y;
 
@@ -423,12 +472,12 @@ void drawProceduralTile(GameData& gameData, Image image, ProceduralTile tile, in
 	SDL_Rect rect = {};
 	SDL_Rect src = {};
 	Image resultImage = {};
-	src.w = TILE_SIZE;
-	src.h = TILE_SIZE;
+	src.w = Constants::TILE_SIZE;
+	src.h = Constants::TILE_SIZE;
 	src.x = (image.w % totalTiles);
 
-	rect.w = TILE_SIZE;
-	rect.h = TILE_SIZE;
+	rect.w = Constants::TILE_SIZE;
+	rect.h = Constants::TILE_SIZE;
 	rect.x = (int)tile.position.x;
 	rect.y = (int)tile.position.y;
 
@@ -517,17 +566,12 @@ void drawCircle(GameData& gameData, Vector position, double radius, int circleOf
 	}
 }
 
-// One function that draws a string in world space
-// One function that draws a string in camera space
-
-// Font_3
-void drawString(Color color, GameData& gameData, SDL_Renderer* renderer, Image* textImage, int size, std::string string, int x, int y) {
+void drawString(Color color, SDL_Renderer* renderer, Image* textImage, int size, std::string string, int x, int y) {
 	SDL_Rect sourceRect = {};
 	sourceRect.w = 14;
 	sourceRect.h = 18;
 	int stringSize = (int)string.size();
 	int spacing = 0;
-	char* read = {};
 
 	for (int i = 0; i < stringSize; i++) {
 		char glyph = string[i];
@@ -559,7 +603,7 @@ void drawStringWorldSpace(Color color, GameData& gameData, SDL_Renderer* rendere
 	destRect.x = x;
 	destRect.y = y;
 	destRect = convertCameraSpace(gameData.camera, destRect);
-	drawString(color, gameData, renderer, textImage, size, string, destRect.x, destRect.y);
+	drawString(color, renderer, textImage, size, string, destRect.x, destRect.y);
 }
 
 DamageNumber createDamageNumber(EntityType type, int damageNumber, Vector position, Vector velocity, int textSize, double lifeTime) {
@@ -581,7 +625,7 @@ void drawDamageNumber(GameData& gameData, DamageNumber& damageNumber, Image* tex
 
 	finalVelocity.x = damageNumber.velocity.x;
 	// Gravity only affects the Y axis
-	finalVelocity.y = damageNumber.velocity.y + (GRAVITY * deltaTime);
+	finalVelocity.y = damageNumber.velocity.y + (Constants::GRAVITY * deltaTime);
 
 	Vector displacement = {};
 	displacement.x = ((finalVelocity.x + damageNumber.velocity.x) / 2) * deltaTime;
@@ -598,14 +642,14 @@ void drawDamageNumber(GameData& gameData, DamageNumber& damageNumber, Image* tex
 	}
 	if (damageNumber.entityType == ENTITY_ENEMY) {
 		color.r = 255;
-		color.g = 165;
-		color.b = 0;
+		color.g = 255;
+		color.b = 255;
 	}
 
 	drawStringWorldSpace(color, gameData, gameData.renderer, textImage, damageNumber.textSize, damageNumber.damageString, (int)damageNumber.position.x, (int)damageNumber.position.y);
 }
 
-ExperienceOrb createExperienceOrb(GameData& gameData, Image image, double positionX, double positionY, double lifeTime) {
+ExperienceOrb createExperienceOrb(Image image, double positionX, double positionY, double lifeTime) {
 	ExperienceOrb result = {};
 
 	result.sprite = createSprite(image);
@@ -618,12 +662,12 @@ ExperienceOrb createExperienceOrb(GameData& gameData, Image image, double positi
 }
 
 void drawFilledRectangle(SDL_Renderer* renderer, SDL_Rect* rect, int red, int green, int blue, int alpha) {
-	SDL_SetRenderDrawColor(renderer, red, green, blue, alpha);
+	SDL_SetRenderDrawColor(renderer, (Uint8)red, (Uint8)green, (Uint8)blue, (Uint8)alpha);
 	SDL_RenderFillRect(renderer, rect);
 }
 
 void drawNonFilledRectangle(SDL_Renderer* renderer, SDL_Rect* rect, int red, int green, int blue, int alpha) {
-	SDL_SetRenderDrawColor(renderer, red, green, blue, alpha);
+	SDL_SetRenderDrawColor(renderer, (Uint8)red, (Uint8)green, (Uint8)blue, (Uint8)alpha);
 	SDL_RenderDrawRect(renderer, rect);
 }
 
@@ -635,26 +679,26 @@ void drawHealthBar(GameData& gameData, SDL_Renderer* renderer) {
 	int missingHPOffset = 0;
 
 	double remainingHPPercent = (double)gameData.player.hp / (double)gameData.player.maxHP;
-	remainingHP.w = (int)(HEALTH_BAR_W * remainingHPPercent);
-	remainingHPOffset = (HEALTH_BAR_W - remainingHP.w) / 2;
-	remainingHP.h = HEALTH_BAR_H;
+	remainingHP.w = (int)(Constants::HEALTH_BAR_W * remainingHPPercent);
+	remainingHPOffset = (Constants::HEALTH_BAR_W - remainingHP.w) / 2;
+	remainingHP.h = Constants::HEALTH_BAR_H;
 	remainingHP.x = (int)(gameData.player.position.x - remainingHPOffset);
 	remainingHP.y = (int)(gameData.player.position.y + 47);
 
 	double missingHPPercent = 1 - remainingHPPercent;
-	missingHP.w = (int)(HEALTH_BAR_W * missingHPPercent);
-	missingHPOffset = (HEALTH_BAR_W - missingHP.w) / 2;
-	missingHP.h = HEALTH_BAR_H;
+	missingHP.w = (int)(Constants::HEALTH_BAR_W * missingHPPercent);
+	missingHPOffset = (Constants::HEALTH_BAR_W - missingHP.w) / 2;
+	missingHP.h = Constants::HEALTH_BAR_H;
 	missingHP.x = (int)(gameData.player.position.x + missingHPOffset);
 	missingHP.y = (int)(gameData.player.position.y + 47);
 
-	outlineHP.w = HEALTH_BAR_W;
-	outlineHP.h = HEALTH_BAR_H;
+	outlineHP.w = Constants::HEALTH_BAR_W;
+	outlineHP.h = Constants::HEALTH_BAR_H;
 	outlineHP.x = (int)(gameData.player.position.x);
 	outlineHP.y = (int)(gameData.player.position.y + 47);
 
 	SDL_Rect remainingHPRect = convertCameraSpaceScreenWH(gameData.camera, remainingHP);
-	drawFilledRectangle(renderer, &remainingHPRect, 0, 255, 255, 255);
+	drawFilledRectangle(renderer, &remainingHPRect, 255, 140, 0, 255);
 
 	SDL_Rect missingHPRect = convertCameraSpaceScreenWH(gameData.camera, missingHP);
 	drawFilledRectangle(renderer, &missingHPRect, 255, 0, 0, 255);
@@ -671,21 +715,21 @@ void drawExperienceBar(GameData& gameData, SDL_Renderer* renderer) {
 	int missingEXPOffset = 0;
 
 	double currentEXPPercent = (double)gameData.player.experience / (double)gameData.player.levelUp;
-	currentEXP.w = (int)(EXP_BAR_W * currentEXPPercent);
-	currentEXPOffset = (EXP_BAR_W - currentEXP.w) / 2;
-	currentEXP.h = EXP_BAR_H;
+	currentEXP.w = (int)(Constants::EXP_BAR_W * currentEXPPercent);
+	currentEXPOffset = (Constants::EXP_BAR_W - currentEXP.w) / 2;
+	currentEXP.h = Constants::EXP_BAR_H;
 	currentEXP.x = (int)(gameData.player.position.x - currentEXPOffset);
 	currentEXP.y = (int)(gameData.player.position.y + 425);
 
 	double missingEXPPercent = 1 - currentEXPPercent;
-	missingEXP.w = (int)(EXP_BAR_W * missingEXPPercent);
-	missingEXPOffset = (EXP_BAR_W - missingEXP.w) / 2;
-	missingEXP.h = EXP_BAR_H;
+	missingEXP.w = (int)(Constants::EXP_BAR_W * missingEXPPercent);
+	missingEXPOffset = (Constants::EXP_BAR_W - missingEXP.w) / 2;
+	missingEXP.h = Constants::EXP_BAR_H;
 	missingEXP.x = (int)(gameData.player.position.x + missingEXPOffset);
 	missingEXP.y = (int)(gameData.player.position.y + 425);
 
-	outlineEXP.w = EXP_BAR_W;
-	outlineEXP.h = EXP_BAR_H;
+	outlineEXP.w = Constants::EXP_BAR_W;
+	outlineEXP.h = Constants::EXP_BAR_H;
 	outlineEXP.x = (int)(gameData.player.position.x);
 	outlineEXP.y = (int)(gameData.player.position.y + 425);
 
@@ -705,4 +749,191 @@ void destroyEnemies(GameData& gameData) {
 	for (int i = 0; i < gameData.enemies.size(); i++) {
 		gameData.enemies[i].destroyed = true;
 	}
+}
+
+void Character::newStaff(Staff* newStaff) {
+	delete staff;
+	staff = newStaff;
+}
+
+// All Spells
+void Spell::setTarget(int spellSpeed) {
+	if (mGameData.enemies.size() > 0) {
+		Vector offset = {};
+		int nearestEnemy = closestEnemy(this->mGameData.player, &mGameData);
+		offset = mGameData.enemies[nearestEnemy].position - mGameData.player.position;
+		setVelocity(normalize(offset) * spellSpeed);
+		mAngle = angleFromDirection(mVelocity);
+	}
+}
+
+void Spell::activateKnockback(Enemy* enemyTargeted) {
+	Vector knockbackVector = {};
+	if (magnitude(mVelocity) == 0) {
+		knockbackVector = enemyTargeted->position - mPosition;
+		// No suitable knockback vector for this case
+		if (magnitude(knockbackVector) == 0) {
+			knockbackVector = { 100, 100 };
+		}
+	}
+	else {
+		knockbackVector = mVelocity;
+	}
+
+	knockbackVector = normalize(knockbackVector);
+
+	knockbackVector = knockbackVector * getKnockbackDistance();
+
+	enemyTargeted->velocity.x += knockbackVector.x;
+	enemyTargeted->velocity.y += knockbackVector.y;
+}
+
+void Spell::collision(Enemy* enemyTargeted) {
+	double distanceBetween = distance(mPosition, enemyTargeted->position);
+	double radiusSum = mRadius + enemyTargeted->radius;
+	if (distanceBetween < radiusSum) {
+		if (enemyTargeted->hp > 0) {
+			int damageDealt = applyDamage(enemyTargeted);
+
+			Vector numberVelocity = {};
+			DamageNumber damageNumber = createDamageNumber(ENTITY_ENEMY, damageDealt, enemyTargeted->position,
+				{ randomFloat(300, -300), randomFloat(-600, -300) }, Constants::DAMAGE_NUMBER_SIZE_E, Constants::DAMAGE_NUMBER_LIFETIME);
+			mGameData.damageNumbers.push_back(damageNumber);
+
+			mEnemyIds.push_back(enemyTargeted->mId);
+
+			if (enemyTargeted->hp <= 0) {
+				enemyTargeted->destroyed = true;
+				// totalEnemiesKilled += 1;
+				// Experience Orbs Vector
+				static Image experienceOrbImage = loadImage(mGameData.renderer, "Assets/Experience_Orb_1.png");
+				ExperienceOrb experienceOrb = createExperienceOrb(experienceOrbImage,
+					enemyTargeted->position.x, enemyTargeted->position.y, Constants::EXPERIENCE_ORB_LIFETIME);
+				mGameData.experienceOrbs.push_back(experienceOrb);
+			}
+
+			// Knock back enemies
+			activateKnockback(enemyTargeted);
+		}
+	}
+}
+
+void Spell::draw(GameData& gameData) {
+	Image* image = getImage(gameData);
+
+	SDL_Rect rect;
+
+	rect.w = image->w;
+	rect.h = image->h;
+	rect.x = (int)mPosition.x;
+	rect.y = (int)mPosition.y;
+
+	rect = convertCameraSpace(gameData.camera, rect);
+
+	SDL_RenderCopyEx(gameData.renderer, image->texture, NULL, &rect, mAngle, NULL, SDL_FLIP_NONE);
+}
+
+void Spell::loadCastSound() {
+
+}
+
+void Spell::playCastSound() {
+
+}
+
+// Spike Spell
+void SpikeSpell::setPosition(Vector position) {
+	mPosition = position;
+}
+
+Image* SpikeSpell::getImage(GameData& gameData) {
+	static Image spellImage = loadImage(gameData.renderer, "Assets/Weapon_Spike_2.png");
+	mRadius = returnSpriteSize(spellImage);
+	return &spellImage;
+}
+
+void SpikeSpell::loadCastSound() {
+	mKey = "spikeCastSound";
+	// Did not find the key
+	if (mGameData.soundFileUMap.find(mKey) == mGameData.soundFileUMap.end()) {
+		SoLoud::Wav& wav = mGameData.soundFileUMap[mKey];
+		wav.load("Assets/Audio/mixkit-arrow-whoosh-1491.wav");
+	}
+	else {
+		printf("Key already in vector\n");
+	}
+}
+
+void SpikeSpell::playCastSound() {
+	loadCastSound();
+	auto result = mGameData.soundFileUMap.find(mKey);
+	if (result != mGameData.soundFileUMap.end()) {
+		int handle = mGameData.soloud.play(result->second, 0.05f, 0, 1);
+		float playSpeed = 1.0f / (float)getSpellAttackDelay();
+		mGameData.soloud.setRelativePlaySpeed(handle, playSpeed);
+		mGameData.soloud.setPause(handle, 0);
+	}
+}
+
+// Shadow Orb Spell
+void ShadowOrbSpell::setPosition(Vector position) {
+	mPosition = position;
+}
+
+Image* ShadowOrbSpell::getImage(GameData& gameData) {
+	static Image spellImage = loadImage(gameData.renderer, "Assets/Weapon_ShadowOrb_1.png");
+	mRadius = returnSpriteSize(spellImage);
+	return &spellImage;
+}
+
+// Consecrated Ground Spell
+void ConsecratedGroundSpell::setPosition(Vector position) {
+	mPosition = position;
+}
+
+Image* ConsecratedGroundSpell::getImage(GameData& gameData) {
+	static Image spellImage = loadImage(gameData.renderer, "Assets/Weapon_Consecrated_Ground_1.png");
+	mRadius = returnSpriteSize(spellImage);
+	return &spellImage;
+}
+
+// Fireball spell
+void FireballSpell::setPosition(Vector position) {
+	mPosition = position;
+}
+
+Image* FireballSpell::getImage(GameData& gameData) {
+	static Image spellImage = loadImage(gameData.renderer, "Assets/Weapon_Fireball_1.png");
+	mRadius = returnSpriteSize(spellImage);
+	return &spellImage;
+}
+
+int FireballSpell::applyDamage(Enemy* enemyTargeted) {
+	if (getPiercingLayers() == 0) {
+		Spell* fireAOESPELL = new FireAOESpell(mGameData);
+		fireAOESPELL->setPosition(mPosition);
+		fireAOESPELL->setLifeTime(2);
+		fireAOESPELL->setDamage(10);
+		fireAOESPELL->setKnockBackDistance(100.0);
+		fireAOESPELL->setAOEAttackDelay(1);
+		mGameData.spells.push_back(fireAOESPELL);
+		mLifeTime = 0;
+	}
+	else {
+		--mPiercingLayers;
+	}
+
+	enemyTargeted->hp -= mDamage;
+	return mDamage;
+}
+
+// AOE spell
+void FireAOESpell::setPosition(Vector position) {
+	mPosition = position;
+}
+
+Image* FireAOESpell::getImage(GameData& gameData) {
+	static Image spellImage = loadImage(gameData.renderer, "Assets/Weapon_Fireball_AOE_6.png");
+	mRadius = returnSpriteSize(spellImage);
+	return &spellImage;
 }
