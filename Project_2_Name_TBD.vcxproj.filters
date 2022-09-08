@@ -20,7 +20,7 @@
     <ClInclude Include="Contrib\Render.h">
       <Filter>Contrib</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Weapon.h">
+    <ClInclude Include="Source\Staff.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Constants.h">
@@ -28,6 +28,18 @@
     </ClInclude>
     <ClInclude Include="Contrib\Perlin.h">
       <Filter>Contrib</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Spell.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Entity.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Tools.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -40,7 +52,19 @@
     <ClCompile Include="Contrib\Render.cpp">
       <Filter>Contrib</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Weapon.cpp">
+    <ClCompile Include="Source\Staff.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Spell.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Entity.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Tools.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -2,32 +2,54 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include <stdio.h>
-#include "Sprite.h"
 #include <algorithm>
 #include <vector>
 #define STB_PERLIN_IMPLEMENTATION
 #include "Perlin.h"
 
-// DONE: Initialize the audio library. Function calls, point to a file, etc.
+#include "Constants.h"
+#include "Tools.h"
+#include "Staff.h"
+#include "Entity.h"
+#include "Game.h"
 
-// With Chris
-// TODO: Think about resource management. Look it up. You're going to want the same thing with sound. 
-//			The sound in memory should only be loaded once. The same goes for images.
+// DONE: Damage numbers types
+// DONE: Refactoring (Forward declaration)
+// DONE: Code cleanup
+// DONE: Fireball animation
+// DONE: Multiple hits
+// DONE: Give weapons charges
+// DONE: Experience orbs can now be picked up within a radius
+
+// Chris
 // TODO: Camera stuff (one to one pixels) and switching coordinate system
+// TODO: Question about the destructor: Do I have a memory leak with Spells* and Character*
 
-// CHRIS WIP
-// DONE: Resource Management Audio. Unordered Map
+// TODO: Fix 1 to 1 input
+// TODO: merge drawHP bar and EXP bar function
+// TODO: Known bug: When enemies are in radius of consecrated ground when I activate it, they don't take damage.
+// TODO: Memory leak (objects created with new need to be deleted) - Change back to value types.
+//			gamedata is the highest up, so it can see more.
+// TODO: Only include what the file needs. Follow the hierarchy
+// TODO: Kinematic equations for pickup radius and magic sword? Set turn speed. (It's homing missiles)
+//			You have an acceleration that you can go. You have a top speed. If the sword starts at the 
+//			top speed, you don't need an acceleration. Then figure out the closest rotation to the target.
+//			If it's to the left, then you apply the maximum turn rate.
+//			(figure out how much you can turn in a frame - angle between your facing direction, and the target.
+//			that's the amount you need to turn before you're facing them. Turnspeed - delta time. Angle to target is turn speed).
+// TODO: Death animations
+// TODO: Better memory allocation for damage numbers (Unordered maps?) A weapon doing 50% 
+//			bonus damage as an addition number for example
+// TODO: Change name 'entityType' to something more suitable.
+// TODO: Clean up DamageNumber struct, createDamageNumber(), and draw damageNumber()
 // TODO: Unorded map for images
-// TODO: Fix enemy spawn counter
 // TODO: Develop a better map
-// TODO: Death animations for enemies
 // TODO: Look into TTF fonts - Slug font renderer
 // TODO: Adding different levels
 // TODO: Separate entity, staff, spell. Non of this belongs in sprite.h and .cpp
 //			Gamedata doesn't belong in sprite either. Game.h and Game.cpp which 
 //			has the game system and gamedata. Think about what system is doing what.
 //			Staff system is responsible for spawning spells.
-// TODO: Make sure every variable is initialized before using it (Default arguments or in a constructor)
 // TODO: Change characters to high res? / 2 in the draw function
 // TODO: Double check sprite and image w and h varaibles no redundant
 // TODO: POWER UP: Increase number of projectiles fired
@@ -42,7 +64,7 @@
 // TODO: Consider add numbers to the health bar
 // TODO: Display current weapon on screen
 // TODO: Add boss / Elite monsters that are scaled up or change in color and have health bars
-// TODO: Consecrated ground differeny status effects it applys? (Poison, frost, fire) - SDL_COLORMOD
+// TODO: Consecrated ground different status effects it applys? (Poison, frost, fire) - SDL_COLORMOD
 // TODO: Fix enemy spawning?
 // TODO: Experiement with fonts (Bitmap ASCII font generators)
 // TODO: Enemies spawning in more of waves / groups
@@ -55,7 +77,8 @@
 // TODO: Implement status effects
 // TODO: IMGUI
 // TODO: Statistic overlay
-// TODO: *Refactor*
+
+static int totalEnemiesKilled = 0;
 
 bool animated = true;
 bool running = true;
@@ -65,16 +88,10 @@ bool left = false;
 bool right = false;
 bool facingRight = false;
 double fireTime = 0;
-double fireTimeAOE = 0;
-int ENEMYSPAWNAMOUNT = 100;
-bool consecratedGround = false;
-
-double projectileDamageDelay = 1;
-
-int totalEnemiesKilled = 0;
+int ENEMYSPAWNAMOUNT = 25;
 
 // No longer allocated on the stack
-GameData gameData;
+GameData gameData = {};
 
 int main(int argc, char** argv) {
 	REF(argc);
@@ -96,6 +113,7 @@ int main(int argc, char** argv) {
 	Image mapA = loadImage(renderer, "Assets/Map_1.png");
 
 	// Player Types
+	Image characterSizeTest = loadImage(renderer, "Assets/Character_Size_Test_1.png");
 	Image characterDemon = loadImage(renderer, "Assets/Character_Demon_8.png");
 	Image characterDemonAnimated = loadImage(renderer, "Assets/Character_Demon_2_Sprite_Sheet_2.png");
 	Image characterMaiden = loadImage(renderer, "Assets/Character_Maiden_1.png");
@@ -106,6 +124,7 @@ int main(int argc, char** argv) {
 	Image characterSkeleton = loadImage(renderer, "Assets/Character_Skeleton_1.png");
 	// "Assets/Character_Ice_Golem_1.png"
 	Image characterDemonTest = loadImage(renderer, "Assets/Character_Demon_7.png");
+
 	Image characterIceGolem = loadImage(renderer, "Assets/Character_Ice_Golem_3.png");
 	
 	// Enemy Types
@@ -118,18 +137,11 @@ int main(int argc, char** argv) {
 	Image enemyType = {};
 	enemyType = enemyBatAnimated;
 
-	// Weapon Types
-	// gameData.weaponType[WEAPON_SHADOW_ORB] = loadImage(renderer, "Assets/Weapon_ShadowOrb_1.png");
-	// gameData.weaponType[WEAPON_SPIKE] = loadImage(renderer, "Assets/Weapon_Spike_1.png");
-	Image weaponSpike = loadImage(renderer, "Assets/Weapon_Spike_2.png");
-	Image weaponShadowOrb = loadImage(renderer, "Assets/Weapon_ShadowOrb_1.png");
-	Image weaponConsecratedGround = loadImage(renderer, "Assets/Weapon_Consecrated_Ground_1.png");
-	Image weaponFireball = loadImage(renderer, "Assets/Weapon_Fireball_1.png");
-	// Assets/Weapon_Fireball_AOE_1.png
-	Image weaponFireballAOE = loadImage(renderer, "Assets/Weapon_Fireball_AOE_6.png");
-	Image currentWeaponSelected = weaponSpike;
+	Image batDeathSpriteSheet = loadImage(renderer, "Assets/Enemy_VampireBat_Death_Sprite-Sheet.png");
 
 	Image experienceOrbImage = loadImage(renderer, "Assets/Experience_Orb_1.png");
+	
+	int fontSize = 1;
 	// Image font = loadFont(renderer, "Assets/Font_1.png");
 	// Image font = loadFont(renderer, "Assets/Font_2.png");
 	Image font = loadFont(renderer, "Assets/Font_3.png");
@@ -141,9 +153,8 @@ int main(int argc, char** argv) {
 
 	createCharacter(gameData, characterIceGolem, 100, false, 300, 1);
 	
-	gameData.player.position.x = Constants::RESOLUTION_X / 2;
-	gameData.player.position.y = Constants::RESOLUTION_Y / 2;
-
+	gameData.player->position.x = Constants::RESOLUTION_X / 2;
+	gameData.player->position.y = Constants::RESOLUTION_Y / 2;
 
 	// Capping frame rate
 	const int FPS = 60;
@@ -160,6 +171,8 @@ int main(int argc, char** argv) {
 	while (running) {
 		frameStart = SDL_GetTicks();
 		SDL_Event event = {};
+		// Only need pollevent in one place of your code
+		// Tied directly to pollevent. Input is 1 to 1.
 		while (SDL_PollEvent(&event)) {
 			switch (event.type) {
 			case SDL_QUIT:
@@ -172,11 +185,11 @@ int main(int argc, char** argv) {
 					break;
 				case SDLK_a:
 					left = false;
-					gameData.player.animated = false;
+					gameData.player->animated = false;
 					break;
 				case SDLK_d:
 					right = false;
-					gameData.player.animated = false;
+					gameData.player->animated = false;
 					break;
 				case SDLK_s:
 					down = false;
@@ -191,12 +204,12 @@ int main(int argc, char** argv) {
 				case SDLK_a:
 					left = true;
 					facingRight = false;
-					gameData.player.animated = true;
+					gameData.player->animated = true;
 					break;
 				case SDLK_d:
 					right = true;
 					facingRight = true;
-					gameData.player.animated = true;
+					gameData.player->animated = true;
 					break;
 				case SDLK_s:
 					down = true;
@@ -204,15 +217,15 @@ int main(int argc, char** argv) {
 				case SDLK_f:
 					break;
 
-					// Characters
+				// Characters
 				case SDLK_1:
-					createCharacter(gameData, characterDemonAnimated, 100, true, 300, 3);
+					createCharacter(gameData, characterSizeTest, 100, false, 300, 1);
 					break;
 				case SDLK_2:
-					createCharacter(gameData, characterGhoul, 100, false, 300, 1);
+					createCharacter(gameData, characterIceGolem, 100, false, 300, 1);
 					break;
 				case SDLK_3:
-					createCharacter(gameData, characterMaiden, 100, false, 300, 1);
+					createCharacter(gameData, characterDemon, 100, false, 300, 1);
 					break;
 				case SDLK_4:
 					createCharacter(gameData, characterVampireA, 100, false, 300, 1);
@@ -227,13 +240,13 @@ int main(int argc, char** argv) {
 					createCharacter(gameData, characterSkeleton, 100, false, 300, 1);
 					break;
 				case SDLK_8:
-					createCharacter(gameData, characterDemonTest, 100, false, 300, 1);
+					createCharacter(gameData, characterMaiden, 100, false, 300, 1);
 					break;
 				case SDLK_9:
-					createCharacter(gameData, characterIceGolem, 100, false, 300, 1);
+					createCharacter(gameData, characterGhoul, 100, false, 300, 1);
 					break;
 
-					// Enemies
+				// Enemies
 				case SDLK_z:
 					destroyEnemies(gameData);
 					enemyType = enemyBatAnimated;
@@ -252,16 +265,16 @@ int main(int argc, char** argv) {
 
 				// Weapons
 				case SDLK_r:
-					gameData.player.newStaff(new SpikeStaff(gameData, &gameData.player));
+					gameData.player->newStaff(new SpikeStaff(gameData, gameData.player));
 					break;
 				case SDLK_t:
-					gameData.player.newStaff(new ShadowOrbStaff(gameData, &gameData.player));
+					gameData.player->newStaff(new ShadowOrbStaff(gameData, gameData.player));
 					break;
 				case SDLK_y:
-					gameData.player.newStaff(new ConsecratedGroundStaff(gameData, &gameData.player));
+					gameData.player->newStaff(new ConsecratedGroundStaff(gameData, gameData.player));
 					break;
 				case SDLK_u:
-					gameData.player.newStaff(new FireballStaff(gameData, &gameData.player));
+					gameData.player->newStaff(new FireballStaff(gameData, gameData.player));
 					break;
 
 					// Destroy
@@ -288,16 +301,16 @@ int main(int argc, char** argv) {
 		double speed = 2;
 
 		if (left) {
-			gameData.player.position.x -= speed;
+			gameData.player->position.x -= speed;
 		}
 		if (right) {
-			gameData.player.position.x += speed;
+			gameData.player->position.x += speed;
 		}
 		if (down) {
-			gameData.player.position.y += speed;
+			gameData.player->position.y += speed;
 		}
 		if (up) {
-			gameData.player.position.y -= speed;
+			gameData.player->position.y -= speed;
 		}
 
 
@@ -321,9 +334,9 @@ int main(int argc, char** argv) {
 		}
 
 		// Update Enemy Position
-		if (gameData.player.hp > 0) {
+		if (gameData.player->hp > 0) {
 			for (int i = 0; i < gameData.enemies.size(); i++) {
-				updateEnemyPosition(&gameData.player, &gameData.enemies[i], deltaTime);
+				updateEnemyPosition(gameData.player, &gameData.enemies[i], deltaTime);
 				for (int j = 0; j < gameData.enemies.size(); j++) {
 					if (j == i) {
 						continue;
@@ -344,7 +357,11 @@ int main(int argc, char** argv) {
 
 		// Update Experience Orb position
 		for (int i = 0; i < gameData.experienceOrbs.size(); i++) {
-			updateExperienceOrbPosition(gameData, &gameData.experienceOrbs[i], Constants::EXPERIENCE_ORB_SPEED, deltaTime);
+			double distanceBetween = distance(gameData.player->position, gameData.experienceOrbs[i].position);
+			double radiusSum = gameData.player->pickUpRadius + gameData.experienceOrbs[i].radius;
+			if (distanceBetween < radiusSum) {
+				updateExperienceOrbPosition(gameData, &gameData.experienceOrbs[i], Constants::EXPERIENCE_ORB_SPEED, deltaTime);
+			}
 		}
 
 		bool playerTakingDamage = false;
@@ -370,10 +387,10 @@ int main(int argc, char** argv) {
 		}
 
 		// Create Projectile and fire at nearest enemy
-		if (gameData.player.hp > 0) {
+		if (gameData.player->hp > 0) {
 			if (gameData.enemies.size() >= 0) {
-				if (gameData.player.staff) {
-					Spell* spell = gameData.player.staff->cast(deltaTime);
+				if (gameData.player->staff) {
+					Spell* spell = gameData.player->staff->cast(deltaTime);
 					if (spell) {
 						gameData.spells.push_back(spell);
 					}
@@ -382,16 +399,16 @@ int main(int argc, char** argv) {
 		}
 
 		// Player collision with enemy
-		if (gameData.player.hp > 0) {
+		if (gameData.player->hp > 0) {
 			for (int i = 0; i < gameData.enemies.size(); i++) {
 				if (gameData.enemies[i].timeUntilDamageDealt <= 0) {
-					double distanceBetween = distancePlayer(gameData.player.position, gameData.enemies[i].position);
-					double radiusSum = gameData.player.radius + gameData.enemies[i].radius;
+					double distanceBetween = distancePlayer(gameData.player->position, gameData.enemies[i].position);
+					double radiusSum = gameData.player->radius + gameData.enemies[i].radius;
 					if (distanceBetween < radiusSum) {
-						DamageNumber damageNumber = createDamageNumber(ENTITY_PLAYER, gameData.enemies[i].damage, gameData.player.position,
+						DamageNumber damageNumber = createDamageNumber(ENTITY_PLAYER, DN_FALLING, 0.0, gameData.enemies[i].damage, gameData.player->position,
 							{ randomFloat(300, -300), randomFloat(-600, -300) }, Constants::DAMAGE_NUMBER_SIZE_P, Constants::DAMAGE_NUMBER_LIFETIME);
 						gameData.damageNumbers.push_back(damageNumber);
-						gameData.player.hp -= gameData.enemies[i].damage;
+						gameData.player->hp -= gameData.enemies[i].damage;
 						playerTakingDamage = true;
 						gameData.enemies[i].timeUntilDamageDealt = .1;
 					}
@@ -400,22 +417,22 @@ int main(int argc, char** argv) {
 		}
 
 		// Player collision with experience orb
-		if (gameData.player.hp > 0) {
+		if (gameData.player->hp > 0) {
 			for (int i = 0; i < gameData.experienceOrbs.size(); i++) {
-				double distanceBetween = distancePlayer(gameData.player.position, gameData.experienceOrbs[i].position);
-				double radiusSum = (gameData.player.radius / 2) + gameData.experienceOrbs[i].radius;
+				double distanceBetween = distancePlayer(gameData.player->position, gameData.experienceOrbs[i].position);
+				double radiusSum = (gameData.player->radius / 2) + gameData.experienceOrbs[i].radius;
 				if (distanceBetween < radiusSum) {
 					gameData.experienceOrbs[i].lifeTime = 0;
-					gameData.player.experience += Constants::EXPERIENCE_ORB_EXPERIENCE;
-					if (gameData.player.experience == 1000) {
-						gameData.player.level += 1;
-						gameData.player.experience = 0;
+					gameData.player->experience += Constants::EXPERIENCE_ORB_EXPERIENCE;
+					if (gameData.player->experience == 1000) {
+						gameData.player->level += 1;
+						gameData.player->experience = 0;
 					}
 				}
 			}
 		}
 
-		gameData.camera.position = gameData.player.position;
+		gameData.camera.position = gameData.player->position;
 
 		// Clear what we are drawing to
 		// Anything done before render clear gets erased
@@ -440,19 +457,8 @@ int main(int argc, char** argv) {
 		textColor.r = 255;
 		textColor.g = 255;
 		textColor.b = 255;
-		// Kill tracker
-		drawString(textColor, gameData.renderer, &font, 1, std::string("Kills: "), 10, 10);
-		drawString(textColor, gameData.renderer, &font, 1, std::to_string(totalEnemiesKilled), 100, 10);
 
-		// DRAW ENTITIES
-
-		// Draw AOE
-		for (int i = 0; i < gameData.aoe.size(); i++) {
-			drawEntity(gameData, gameData.aoe[i]);
-			gameData.aoe[i].lifeTime -= deltaTime;
-			// SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-			// drawCircle(renderer, weaponSpikeArray[i].sprite.position, weaponSpikeArray[i].radius);
-		}
+		// ***Draw Entities***
 
 		// Draw Spells
 		for (Spell* spell : gameData.spells) {
@@ -462,59 +468,79 @@ int main(int argc, char** argv) {
 		}
 
 		// Draw Player
-		if (gameData.player.hp > 0) {
-			if (gameData.player.animated) {
+		if (gameData.player->hp > 0) {
+			if (gameData.player->animated) {
 				drawEntityAnimated(gameData, gameData.player, facingRight);
 			}
-			if (!gameData.player.animated) {
+			if (!gameData.player->animated) {
 				drawCharacterIdle(gameData, gameData.player, facingRight);
 			}
-			// WIP - Radius for picking up experience orbs
-			// SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
-			// drawCircle(gameData, gameData.player.position, gameData.player.radius * EXPERIENCE_RADIUS, 0);
 		}
 
 		// Draw Enemies
 		for (int i = 0; i < gameData.enemies.size(); i++) {
-			// Check to see if the boolean value is true when the enemy was created. If it was, draw it.
-			double damagePercent = (double)gameData.enemies[i].hp / (double)gameData.enemies[i].maxHP;
-			SDL_SetTextureColorMod(gameData.enemies[i].sprite.image.texture, (Uint8)255, (Uint8)(100 + (155 * damagePercent)), (Uint8)(100 + (155 * damagePercent)));
-			if (gameData.enemies[i].animated) {
-				drawEntityAnimated(gameData, gameData.enemies[i], gameData.enemies[i].position.x < gameData.player.position.x);
+			if (!gameData.enemies[i].destroyed) {
+				// Check to see if the boolean value is true when the enemy was created. If it was, draw it.
+				double damagePercent = (double)gameData.enemies[i].hp / (double)gameData.enemies[i].maxHP;
+				SDL_SetTextureColorMod(gameData.enemies[i].sprite.image.texture, (Uint8)255, (Uint8)(100 + (155 * damagePercent)), (Uint8)(100 + (155 * damagePercent)));
+				if (gameData.enemies[i].animated) {
+					drawEntityAnimated(gameData, &gameData.enemies[i], gameData.enemies[i].position.x < gameData.player->position.x);
+				}
+				if (!gameData.enemies[i].animated) {
+					drawEntity(gameData, &gameData.enemies[i]);
+				}
+				// SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+				// drawCircle(renderer, enemy[i].sprite.position, enemy[i].radius);
 			}
-			if (!gameData.enemies[i].animated) {
-				drawEntity(gameData, gameData.enemies[i]);
+			else {
+				createDeathAnimation(batDeathSpriteSheet, gameData.enemies[i].position, gameData, 5);
 			}
-			// SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-			// drawCircle(renderer, enemy[i].sprite.position, enemy[i].radius);
+		}
+
+		// Death animations
+		for (int i = 0; i < gameData.deathAnimations.size(); i++) {
+			drawDeathAnimation(gameData, &gameData.deathAnimations[i], gameData.deathAnimations[i].position.x < gameData.player->position.x);
+			gameData.deathAnimations[i].timeUntilNextFrame -= deltaTime;
 		}
 
 		drawExperienceBar(gameData, renderer);
 
-		// Experience tracker
-		std::string experienceTracker = std::to_string(gameData.player.experience);
-		experienceTracker += std::string("/");
-		experienceTracker += std::to_string(gameData.player.levelUp);
-		int numberOfPixelsW = (int)experienceTracker.size() * 14;
-		drawString(textColor, renderer, &font, 1, experienceTracker, (Constants::RESOLUTION_X / 2) - (numberOfPixelsW / 2), 865);
-
-		// Level tracker
-		std::string levelTracker = std::string("Level: ");
-		levelTracker += std::to_string(gameData.player.level);
-		int pixelWidthLeveltracker = (int)levelTracker.size() * 14;
-		drawString(textColor, renderer, &font, 1, levelTracker, (Constants::RESOLUTION_X / 2) - (pixelWidthLeveltracker / 2), 835);
-
 		// Draw Damage Numbers
 		for (int i = 0; i < gameData.damageNumbers.size(); i++) {
-			drawDamageNumber(gameData, gameData.damageNumbers[i], &font, deltaTime);
-			gameData.damageNumbers[i].lifeTime -= deltaTime;
+			if (gameData.damageNumbers[i].lifeTime > 0 && gameData.damageNumbers[i].numberDelay <= 0) {
+				drawDamageNumber(gameData, gameData.damageNumbers[i], &font, deltaTime);
+				if (gameData.damageNumbers[i].entityType == ENTITY_ENEMY && gameData.damageNumbers[i].soundPlayed == false) {
+					playEnemyHitSound(gameData);
+					gameData.damageNumbers[i].soundPlayed = true;
+				}
+				gameData.damageNumbers[i].lifeTime -= deltaTime;
+			}
+			gameData.damageNumbers[i].numberDelay -= deltaTime;
 		}
 
 		// Draw Experience Orbs
 		for (int i = 0; i < gameData.experienceOrbs.size(); i++) {
-			drawEntity(gameData, gameData.experienceOrbs[i]);
+			drawEntity(gameData, &gameData.experienceOrbs[i]);
 			gameData.experienceOrbs[i].lifeTime -= deltaTime;
 		}
+
+		// ***Player Interface***
+		// Experience tracker
+		std::string experienceTracker = std::to_string(gameData.player->experience);
+		experienceTracker += std::string("/");
+		experienceTracker += std::to_string(gameData.player->levelUp);
+		int numberOfPixelsW = (int)experienceTracker.size() * 14;
+		drawString(textColor, renderer, &font, fontSize, experienceTracker, (Constants::RESOLUTION_X / 2) - (numberOfPixelsW / 2), 865);
+
+		// Level tracker
+		std::string levelTracker = std::string("Level: ");
+		levelTracker += std::to_string(gameData.player->level);
+		int pixelWidthLeveltracker = (int)levelTracker.size() * 14;
+		drawString(textColor, renderer, &font, fontSize, levelTracker, (Constants::RESOLUTION_X / 2) - (pixelWidthLeveltracker / 2), 835);
+
+		// Kill tracker
+		drawString(textColor, gameData.renderer, &font, fontSize, std::string("Kills: "), 10, 10);
+		drawString(textColor, gameData.renderer, &font, fontSize, std::to_string(totalEnemiesKilled), 100, 10);
 
 		// After renderPresent, the frame is over
 		SDL_RenderPresent(renderer);
@@ -523,8 +549,16 @@ int main(int argc, char** argv) {
 		// erase_if is going over every element and asking you if 
 		// you want it to be deleted
 
-		std::erase_if(gameData.enemies, [](const Enemy& enemy) {
+		std::erase_if(gameData.enemies, [](const Enemy enemy) {
+			if (enemy.destroyed) {
+				totalEnemiesKilled += 1;
+			}
 			return enemy.destroyed;
+			}
+		);
+
+		std::erase_if(gameData.deathAnimations, [](const DeathAnimation deathAnimation) {
+			return deathAnimation.currentFrame >= deathAnimation.frames;
 			}
 		);
 
@@ -533,12 +567,13 @@ int main(int argc, char** argv) {
 			}
 		);
 
-		std::erase_if(gameData.damageNumbers, [](const DamageNumber& damageNumber) {
+
+		std::erase_if(gameData.damageNumbers, [](const DamageNumber damageNumber) {
 			return damageNumber.lifeTime <= 0;
 			}
 		);
 
-		std::erase_if(gameData.experienceOrbs, [](const ExperienceOrb& experienceOrb) {
+		std::erase_if(gameData.experienceOrbs, [](const ExperienceOrb experienceOrb) {
 			return experienceOrb.lifeTime <= 0;
 			}
 		);
