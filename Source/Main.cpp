@@ -13,30 +13,27 @@
 #include "Entity.h"
 #include "Game.h"
 
-// DONE: Damage numbers types
-// DONE: Refactoring (Forward declaration)
-// DONE: Code cleanup
-// DONE: Fireball animation
-// DONE: Multiple hits
-// DONE: Give weapons charges
-// DONE: Experience orbs can now be picked up within a radius
-
-// Chris
-// TODO: Camera stuff (one to one pixels) and switching coordinate system
-// TODO: Question about the destructor: Do I have a memory leak with Spells* and Character*
-
-// TODO: Fix 1 to 1 input
-// TODO: merge drawHP bar and EXP bar function
-// TODO: Known bug: When enemies are in radius of consecrated ground when I activate it, they don't take damage.
-// TODO: Memory leak (objects created with new need to be deleted) - Change back to value types.
+// DONE: Death animations finished
+// DONE: Damage numbers now delay death animations to make it feel more responsive.
+// DONE: Hierarchy for files
+// DONE: More sounds
+// DONE: Enchanted Sword
+// DONE: Memory leak (objects created with new need to be deleted) - Change back to value types.
 //			gamedata is the highest up, so it can see more.
-// TODO: Only include what the file needs. Follow the hierarchy
-// TODO: Kinematic equations for pickup radius and magic sword? Set turn speed. (It's homing missiles)
-//			You have an acceleration that you can go. You have a top speed. If the sword starts at the 
-//			top speed, you don't need an acceleration. Then figure out the closest rotation to the target.
-//			If it's to the left, then you apply the maximum turn rate.
-//			(figure out how much you can turn in a frame - angle between your facing direction, and the target.
-//			that's the amount you need to turn before you're facing them. Turnspeed - delta time. Angle to target is turn speed).
+
+// TODO: Add a indicator over the head of enemies that the enchanted sword is targeting, change the 
+//			speed of the sword when it is turning
+// TODO: Game states (levels & menus), and a character selection window
+// TODO: Increase the pixel ratios of all characters, weapons, and enemies
+// TODO: Experience level up window
+// TODO: Improve the damage number implementation (Offset each number by some or add a small knockback
+//			per damage number applied)
+// TODO: Code clean up and revision of names
+
+// Chris WIP: Shadows for sprites (For free)
+// Chris WIP: Camera stuff (one to one pixels) and switching coordinate system
+
+// TODO: Known bug: When enemies are in radius of consecrated ground when I activate it, they don't take damage.
 // TODO: Death animations
 // TODO: Better memory allocation for damage numbers (Unordered maps?) A weapon doing 50% 
 //			bonus damage as an addition number for example
@@ -46,10 +43,6 @@
 // TODO: Develop a better map
 // TODO: Look into TTF fonts - Slug font renderer
 // TODO: Adding different levels
-// TODO: Separate entity, staff, spell. Non of this belongs in sprite.h and .cpp
-//			Gamedata doesn't belong in sprite either. Game.h and Game.cpp which 
-//			has the game system and gamedata. Think about what system is doing what.
-//			Staff system is responsible for spawning spells.
 // TODO: Change characters to high res? / 2 in the draw function
 // TODO: Double check sprite and image w and h varaibles no redundant
 // TODO: POWER UP: Increase number of projectiles fired
@@ -88,7 +81,7 @@ bool left = false;
 bool right = false;
 bool facingRight = false;
 double fireTime = 0;
-int ENEMYSPAWNAMOUNT = 25;
+int ENEMYSPAWNAMOUNT = 50;
 
 // No longer allocated on the stack
 GameData gameData = {};
@@ -151,7 +144,7 @@ int main(int argc, char** argv) {
 	gameData.tileTypeArray[TILE_DIRT] = loadImage(renderer, "Assets/dirtTile.png");
 	gameData.tileTypeArray[TILE_ROCK] = loadImage(renderer, "Assets/rockTile.png");
 
-	createCharacter(gameData, characterIceGolem, 100, false, 300, 1);
+	createCharacter(gameData, characterDemon, 100, false, 300, 1);
 	
 	gameData.player->position.x = Constants::RESOLUTION_X / 2;
 	gameData.player->position.y = Constants::RESOLUTION_Y / 2;
@@ -276,6 +269,9 @@ int main(int argc, char** argv) {
 				case SDLK_u:
 					gameData.player->newStaff(new FireballStaff(gameData, gameData.player));
 					break;
+				case SDLK_i:
+					gameData.player->newStaff(new MagicSwordStaff(gameData, gameData.player));
+					break;
 
 					// Destroy
 				case SDLK_BACKSPACE:
@@ -331,6 +327,12 @@ int main(int argc, char** argv) {
 			else {
 				createEnemy(enemyType, enemyPosition, &gameData, 100, 2, false, 300, 0);
 			}
+			/*
+			* // Degugging
+			Vector enemyPosition = gameData.player->position;
+			enemyPosition.y += 300;
+			createEnemy(enemyType, enemyPosition, &gameData, 100, 2, true, 300, 2);
+			*/
 		}
 
 		// Update Enemy Position
@@ -493,7 +495,7 @@ int main(int argc, char** argv) {
 				// drawCircle(renderer, enemy[i].sprite.position, enemy[i].radius);
 			}
 			else {
-				createDeathAnimation(batDeathSpriteSheet, gameData.enemies[i].position, gameData, 5);
+				createDeathAnimation(batDeathSpriteSheet, gameData.enemies[i].position, gameData, 5, gameData.enemies[i].timesHit);
 			}
 		}
 

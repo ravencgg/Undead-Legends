@@ -1,5 +1,6 @@
 #include "Spell.h"
 #include "Constants.h"
+#include <algorithm>
 
 class GameData;
 
@@ -55,11 +56,12 @@ void Spell::collision(Enemy* enemyTargeted) {
 					// Or do the division in here and push back a damage number 5+ times based off hits
 					// Remove number of hits from damage number and revert the changes. Damage number should 
 					// ONLY draw 1 damage number. It shouldn't know how many to draw.
+					enemyTargeted->timesHit = mNumberOfHits;
 					for (int i = 0; i < mNumberOfHits; i++) {
-						DamageNumber damageNumber = createDamageNumber(ENTITY_ENEMY, DN_FALLING, numberDelay, updatedDamageNumber, enemyTargeted->position,
+						DamageNumber damageNumber = createDamageNumber(ENTITY_ENEMY, DN_ASCENDING, numberDelay, updatedDamageNumber, enemyTargeted->position,
 							{ randomFloat(300, -300), randomFloat(-600, -300) }, Constants::DAMAGE_NUMBER_SIZE_E, Constants::DAMAGE_NUMBER_LIFETIME);
 						mGameData.damageNumbers.push_back(damageNumber);
-						updatedLifeTime += 0.25;
+						updatedLifeTime += 0.50;
 						numberDelay += 0.25;
 					}
 
@@ -97,7 +99,7 @@ void Spell::draw(GameData& gameData) {
 		srcRect.w = image->w / mFrames;
 		srcRect.h = image->h;
 		Uint32 getTicks = SDL_GetTicks();
-		srcRect.x = srcRect.w * (int)((getTicks / 100) % mFrames);
+		srcRect.x = srcRect.w * (int)((getTicks / 75) % mFrames);
 
 		destRect.w = srcRect.w;
 		destRect.h = srcRect.h;
@@ -212,10 +214,11 @@ void FireballSpell::setPosition(Vector position) {
 }
 
 Image* FireballSpell::getImage(GameData& gameData) {
-	// "Assets/Weapon_Fireball_1.png"
-	// "Assets/Weapon_Fireball_Test.png"
+	// "Assets/Fireball_Animated/Fireball_Animated_3_Final-Sheet.png"
+	// "Assets/Fireball_Animated/Fireball_Animated_4_Final-Sheet.png"
+	// "Assets/Fireball_Animated/Fireball_Animated_5_Final-Sheet.png"
 	mFrames = 7;
-	static Image spellImage = loadImage(gameData.renderer, "Assets/Fireball_Animated/Fireball_Animated_3_Final-Sheet.png");
+	static Image spellImage = loadImage(gameData.renderer, "Assets/Fireball_Animated/Fireball_Animated_5_Final-Sheet.png");
 	return &spellImage;
 }
 
@@ -224,9 +227,9 @@ int FireballSpell::applyDamage(Enemy* enemyTargeted) {
 		Spell* fireAOESPELL = new FireAOESpell(mGameData);
 		fireAOESPELL->setPosition(mPosition);
 		fireAOESPELL->setLifeTime(5);
-		fireAOESPELL->setDamage(10);
-		fireAOESPELL->setKnockBackDistance(100.0);
-		fireAOESPELL->setAOEAttackDelay(5);
+		fireAOESPELL->setDamage(50);
+		fireAOESPELL->setKnockBackDistance(0.0);
+		fireAOESPELL->setAOEAttackDelay(0.5);
 		mGameData.spells.push_back(fireAOESPELL);
 
 		mLifeTime = 0;
@@ -245,6 +248,8 @@ void FireAOESpell::setPosition(Vector position) {
 }
 
 Image* FireAOESpell::getImage(GameData& gameData) {
+	// "Assets/Weapon_Fireball_AOE_5.png"
+	// "Assets/Weapon_Fireball_AOE_6.png"
 	static Image spellImage = loadImage(gameData.renderer, "Assets/Weapon_Fireball_AOE_6.png");
 	mRadius = returnSpriteSize(spellImage);
 	return &spellImage;
@@ -256,7 +261,52 @@ void MagicSwordSpell::setPosition(Vector position) {
 }
 
 Image* MagicSwordSpell::getImage(GameData& gameData) {
-	static Image spellImage = loadImage(gameData.renderer, "Assets/Weapon_Spike_1.png");
+	// "Assets/Weapon_Magic_Sword_2.png"
+	// "Assets/Weapon_Magic_Sword_3.png"
+	static Image spellImage = loadImage(gameData.renderer, "Assets/Weapon_Magic_Sword_3.png");
 	mRadius = returnSpriteSize(spellImage);
 	return &spellImage;
+}
+
+void MagicSwordSpell::setTarget(int spellSpeed) {
+	mSpellSpeed = spellSpeed;
+	if (mGameData.enemies.size() > 0) {
+		Vector offset = {};
+		// closestEnemyMS does a (if targeted) check
+		int nearestEnemy = closestEnemyMS(mGameData.player->position, &mGameData);
+		mGameData.enemies[nearestEnemy].targeted = true;
+		mSingleEnemyId = mGameData.enemies[nearestEnemy].mId;
+		offset = mGameData.enemies[nearestEnemy].position - mGameData.player->position;
+		setVelocity(normalize(offset) * spellSpeed);
+		mAngle = angleFromDirection(mVelocity);
+	}
+}
+
+void MagicSwordSpell::updatePosition(double deltaTime) {
+	mTimeUntilDamageDealt -= deltaTime;
+	for (int i = 0; i < mGameData.enemies.size(); i++) {
+		if (mGameData.enemies[i].mId == mSingleEnemyId && mGameData.enemies[i].hp > 0 && mGameData.player->hp > 0) {
+			Vector offset = {};
+			Vector newDirectionVelocity = {};
+			double currentFacingDirection = mAngle;
+			double newFacingDirection = 0.0;
+
+			offset = mGameData.enemies[i].position - mPosition;
+			newDirectionVelocity = normalize(offset);
+			mVelocity = normalize(mVelocity);
+			newFacingDirection = angleFromDirection(newDirectionVelocity);
+
+			double directionAngle = ClosestRotation(currentFacingDirection, newFacingDirection);
+			double maxTurn = (mTurnSpeed * deltaTime);
+			double turnThisFrame = std::min(abs(directionAngle), maxTurn);
+			mAngle += sign(directionAngle) * turnThisFrame;
+
+			Vector newVelocityVector = facingDirection(mAngle);
+			mVelocity = newVelocityVector;
+			mVelocity *= mSpellSpeed;
+			mPosition.x += (mVelocity.x * deltaTime);
+			mPosition.y += (mVelocity.y * deltaTime);
+			break;
+		}
+	}
 }

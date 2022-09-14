@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include "Game.h"
+#include "Constants.h"
 
 class GameData;
 
@@ -31,6 +32,7 @@ class Spell {
 		std::string				mSpellKey;
 		std::string				mEnemyHitKey;
 		std::vector<uint32_t>	mEnemyIds;
+		uint32_t				mSingleEnemyId;
 
 	public:
 		Spell(GameData& gameData) : mGameData(gameData) {}
@@ -230,17 +232,65 @@ class FireAOESpell : public Spell {
 };
 
 class MagicSwordSpell : public Spell {
-public:
-	// Constructor
-	MagicSwordSpell(GameData& gameData) : Spell(gameData) {}
-	Image* getImage(GameData& gameData) override;
-	void setPosition(Vector position) override;
-	/*
-	void updatePosition(double deltaTime) override {
-		if (currentLifeTime(deltaTime) > 0) {
-			mPosition = mPosition + (mVelocity * deltaTime);
+	public:
+		double			mTurnSpeed = 0.0;
+		double			mTimeUntilDamageDealt = 0.0;
+		double			mDelayUntilAttack = 0.0;
+
+		// Constructor
+		MagicSwordSpell(GameData& gameData) : Spell(gameData) {}
+		Image* getImage(GameData& gameData) override;
+		void setPosition(Vector position) override;
+
+		void setTarget(int spellSpeed) override;
+		void setTurnSpeed(double turnSpeed) {
+			mTurnSpeed = turnSpeed;
 		}
-	}
-	virtual int applyDamage(Enemy* enemyTargeted) override;
-	*/
+		void setDelayUntilAttack(double delayUntilAttack) {
+			mDelayUntilAttack = delayUntilAttack;
+		}
+
+		void updatePosition(double deltaTime) override;
+
+		virtual bool canDamage(Enemy* enemyTargeted) {
+			if (enemyTargeted->hp <= 0) {
+				return false;
+			}
+			if (mTimeUntilDamageDealt <= 0) {
+				if (mSingleEnemyId == enemyTargeted->mId) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		virtual int applyDamage(Enemy* enemyTargeted) override {
+			// Modifying this could be cool.
+			enemyTargeted->hp -= mDamage;
+			if (enemyTargeted->hp <= 0) {
+				// Could be between the player or the weapon itself
+				// mGameData.player->position
+				// mPosition
+				// Potential vector subscript out of range bug when many are spawned.
+				// May never be able to get to this bug.
+				int nearestEnemy = closestEnemyMS(mPosition, &mGameData);
+				// This fix makes it so the weapons that stop targeting stop moving perminantly?
+				if (nearestEnemy > 0) {
+					if (distance(mGameData.enemies[nearestEnemy].position, mGameData.player->position) > Constants::RESOLUTION_Y / 3) {
+						nearestEnemy = closestEnemyMS(mGameData.player->position, &mGameData);
+						mGameData.enemies[nearestEnemy].targeted = true;
+						mSingleEnemyId = mGameData.enemies[nearestEnemy].mId;
+					}
+					else {
+						mGameData.enemies[nearestEnemy].targeted = true;
+						mSingleEnemyId = mGameData.enemies[nearestEnemy].mId;
+					}
+				}
+			}
+			else {
+				mTimeUntilDamageDealt = mDelayUntilAttack;
+			}
+			return mDamage;
+		}
+
 };

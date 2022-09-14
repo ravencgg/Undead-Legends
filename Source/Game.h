@@ -1,4 +1,5 @@
 #pragma once
+#define NOMINMAX
 #include <soloud.h>
 #include <soloud_wav.h>
 #include <soloud_audiosource.h>
@@ -46,6 +47,8 @@ class Spell;
 
 struct Camera {
 	Vector					position;
+	// Viewing region (16:9) size;
+	// Figure out the window size every frame using the aspect ratio
 };
 
 struct Tile {
@@ -60,6 +63,7 @@ class GameData {
 		Camera											camera;
 		std::vector<Enemy>								enemies;
 		std::vector<DeathAnimation>						deathAnimations;
+		std::vector<uint32_t>							magicSwordEnemyIds;
 		std::vector<Spell*>								spells;
 		std::vector<DamageNumber>						damageNumbers;
 		std::vector<ExperienceOrb>						experienceOrbs;
@@ -80,6 +84,10 @@ Image loadFont(SDL_Renderer* renderer, const char* fileName);
 float randomFloat(float min, float max);
 
 double dotProduct(Vector a, Vector b);
+
+double ClosestRotation(double current, double target);
+
+double sign(double value);
 
 SDL_Rect convertCameraSpace(Camera& camera, SDL_Rect worldSpace);
 

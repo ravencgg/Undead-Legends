@@ -50,12 +50,15 @@ class Enemy : public Entity {
 		int						damage = 0;
 		double					timeUntilDamageDealt = 0.0;
 		double					timeUntilDamageTaken = 0.0;
+		int						timesHit = 1;
+		bool					targeted = false;
 };
 
 class DeathAnimation : public Entity {
 	public:
 		int						currentFrame = 0;
 		double					timeUntilNextFrame = 0.0;
+		int						timesHit = 0;
 };
 
 class Weapon : public Entity {
@@ -84,9 +87,11 @@ void drawCharacterIdle(GameData& gameData, Entity* entity, bool right);
 
 void createEnemy(Image image, Vector position, GameData* gameData, int healthPoints, int damage, bool animated, int speed, int frames);
 
-void createDeathAnimation(Image image, Vector position, GameData& gameData, int frames);
+void createDeathAnimation(Image image, Vector position, GameData& gameData, int frames, int timesHit);
 
 int closestEnemy(Character* player, GameData* gameData);
+
+int closestEnemyMS(Vector position, GameData* gameData);
 
 void updateExperienceOrbPosition(GameData& gameData, ExperienceOrb* experienceOrb, double speed, double delta);
 

@@ -158,10 +158,20 @@ void drawDeathAnimation(GameData& gameData, DeathAnimation* deathAnimation, bool
 			SDL_RenderCopyEx(gameData.renderer, deathAnimation->sprite.image.texture, &srcRect, &destRect, deathAnimation->angle, NULL, SDL_FLIP_NONE);
 		}
 
-		if (deathAnimation->timeUntilNextFrame <= 0) {
-			// .1 = 100 miliseconds
-			deathAnimation->timeUntilNextFrame = 0.1;
-			deathAnimation->currentFrame += 1;
+		// The frame we want it to pause on while being hit
+		if (deathAnimation->currentFrame == 0 && deathAnimation->timesHit > 1) {
+			if (deathAnimation->timeUntilNextFrame <= 0) {
+				// timesHit * the value of the numbers spawned.
+				deathAnimation->timeUntilNextFrame = deathAnimation->timesHit * 0.25;
+				deathAnimation->currentFrame += 1;
+			}
+		}
+		else {
+			if (deathAnimation->timeUntilNextFrame <= 0) {
+				// .1 = 100 miliseconds
+				deathAnimation->timeUntilNextFrame = 0.1;
+				deathAnimation->currentFrame += 1;
+			}
 		}
 	}
 }
@@ -220,13 +230,14 @@ void createEnemy(Image image, Vector position, GameData* gameData, int healthPoi
 	gameData->enemies.push_back(enemy);
 }
 
-void createDeathAnimation(Image image, Vector position, GameData& gameData, int frames) {
+void createDeathAnimation(Image image, Vector position, GameData& gameData, int frames, int timesHit) {
 	DeathAnimation deathAnimation = {};
 
 	deathAnimation.sprite = createSprite(image);
 	deathAnimation.position = position;
 	deathAnimation.frames = frames;
 	deathAnimation.currentFrame = 0;
+	deathAnimation.timesHit = timesHit;
 
 	gameData.deathAnimations.push_back(deathAnimation);
 }
@@ -239,6 +250,22 @@ int closestEnemy(Character* player, GameData* gameData) {
 		if (distanceBetween < closestDistance) {
 			closestDistance = distanceBetween;
 			index = i;
+		}
+	}
+	return index;
+}
+
+int closestEnemyMS(Vector position, GameData* gameData) {
+	double closestDistance = DBL_MAX;
+	int index = -1;
+	for (int i = 0; i < gameData->enemies.size(); i++) {
+		// If enemy targeted
+		if (!gameData->enemies[i].targeted) {
+			double distanceBetween = distance(position, gameData->enemies[i].position);
+			if (distanceBetween < closestDistance) {
+				closestDistance = distanceBetween;
+				index = i;
+			}
 		}
 	}
 	return index;

@@ -117,6 +117,34 @@ double dotProduct(Vector a, Vector b) {
 	return a.x * b.x + a.y * b.y;
 }
 
+double ClosestRotation(double current, double target)
+{
+	double result = 0;
+	double angle = target - current;
+	if (angle > 0)
+	{
+		if (angle < 180)
+			result = angle;
+		else
+			result = angle - (2 * 180);
+	}
+	else if (angle < 0)
+	{
+		if (angle > - 180)
+			result = angle;
+		else
+			result = angle + (2 * 180);
+	}
+	return result;
+}
+
+double sign(double value) {
+	if (value >= 0)
+		return 1;
+	else
+		return -1;
+}
+
 SDL_Rect convertCameraSpace(Camera& camera, SDL_Rect worldSpace) {
 	SDL_Rect cameraSpace;
 	cameraSpace.w = worldSpace.w;
@@ -278,6 +306,9 @@ std::string loadDamageNumberHitSound(GameData& gameData) {
 		SoLoud::Wav& wav = gameData.soundFileUMap[enemyHitKey];
 		// Assets/Audio/mixkit-hard-typewriter-hit-1364.wav
 		// Assets/Audio/mixkit-typewriter-hit-1362.wav
+		// Assets/Audio/mixkit-punch-with-short-whistle-2049.wav
+		// Assets/Audio/mixkit-air-in-a-hit-2161.wav
+		// Assets/Audio/mixkit-light-impact-on-the-ground-2070.wav
 		wav.load("Assets/Audio/mixkit-air-in-a-hit-2161.wav");
 	}
 	return enemyHitKey;
@@ -288,7 +319,7 @@ void playEnemyHitSound(GameData& gameData) {
 	std::string enemyHitKey = loadDamageNumberHitSound(gameData);
 	auto result = gameData.soundFileUMap.find(enemyHitKey);
 	if (result != gameData.soundFileUMap.end()) {
-		int handle = gameData.soloud.play(result->second, 0.25f, 0, 1);
+		int handle = gameData.soloud.play(result->second, 0.15f, 0, 1);
 		float playSpeed = 1.0f;
 		gameData.soloud.setRelativePlaySpeed(handle, playSpeed);
 		gameData.soloud.setPause(handle, 0);
@@ -302,9 +333,11 @@ void drawDamageNumber(GameData& gameData, DamageNumber& damageNumber, Image* tex
 	if (damageNumber.damageNumberT == DN_FALLING) {
 		finalVelocity.x = damageNumber.velocity.x;
 		// Gravity only affects the Y axis
+		// v = v0 + at
 		finalVelocity.y = damageNumber.velocity.y + (Constants::GRAVITY * deltaTime);
 
 		Vector displacement = {};
+		// change in X (displacement) = (v + v0 / 2)t
 		displacement.x = ((finalVelocity.x + damageNumber.velocity.x) / 2) * deltaTime;
 		displacement.y = ((finalVelocity.y + damageNumber.velocity.y) / 2) * deltaTime;
 		REF(deltaTime);

@@ -20,6 +20,8 @@ class Staff {
 		double						mTimeUntilCast = 0;
 		double						mSpellAttackDelay = 0;
 
+		// uint32_t					mEntityID = -1;
+
 	public:
 		// Initializtion list. Use comma to init more variables
 		// By the time you are inside of a constructors scope,
@@ -67,8 +69,8 @@ class Staff {
 class SpikeStaff : public Staff {
 	public:
 		SpikeStaff(GameData& gameData, Character* caster) : Staff(gameData) {
-			mSpellAttackDelay = 0.5;
-			setMaxCharges(1);
+			mSpellAttackDelay = 1;
+			setMaxCharges(2);
 			this->mCaster = caster;
 		}
 
@@ -78,12 +80,12 @@ class SpikeStaff : public Staff {
 				spikeSpell->setPosition(mCaster->position);
 				spikeSpell->setTarget(400);
 				spikeSpell->setLifeTime(5);
-				spikeSpell->setDamage(100);
+				spikeSpell->setDamage(50);
 				spikeSpell->setKnockBackDistance(0.0);
 				spikeSpell->setPiercingLayers(0);
 				spikeSpell->setSpellAttackDelay(getSpellAttackDelay());
-				spikeSpell->setNumberOfHits(1);
-				spikeSpell->playCastSound();
+				spikeSpell->setNumberOfHits(2);
+				// spikeSpell->playCastSound();
 				return spikeSpell;
 			}
 			else {
@@ -155,15 +157,15 @@ class FireballStaff : public Staff {
 			if (canCast(deltaTime)) {
 				FireballSpell* fireballSpell = new FireballSpell(mGameData);
 				fireballSpell->setPosition(mCaster->position);
-				fireballSpell->setTarget(300);
-				fireballSpell->setLifeTime(5);
-				fireballSpell->setDamage(60);
+				fireballSpell->setTarget(200);
+				fireballSpell->setLifeTime(10);
+				fireballSpell->setDamage(100);
 				// Spell has no velocity (direction), so there is no direction to
 				// apply the knockback.
 				fireballSpell->setKnockBackDistance(750.0);
 				fireballSpell->setPiercingLayers(0);
 				fireballSpell->setSpellAttackDelay(getSpellAttackDelay());
-				fireballSpell->setNumberOfHits(3);
+				fireballSpell->setNumberOfHits(1);
 				return fireballSpell;
 			}
 			else {
@@ -173,26 +175,32 @@ class FireballStaff : public Staff {
 };
 
 class MagicSwordStaff : public Staff {
-public:
-	MagicSwordStaff(GameData& gameData, Character* caster) : Staff(gameData) {
-		mSpellAttackDelay = 2;
-		this->mCaster = caster;
-	}
+	public:
+		MagicSwordStaff(GameData& gameData, Character* caster) : Staff(gameData) {
+			mSpellAttackDelay = UINT_MAX;
+			// Vector subscript out of range bug where there are too many. (Targeting enemies that don't 
+			// exist) - Make bosses targetable by multiple enemies (remove the targeted boolean variable)
+			// (If no other enemies exist)
+			setMaxCharges(1);
+			this->mCaster = caster;
+		}
 
-	Spell* cast(double deltaTime) override {
-		if (canCast(deltaTime)) {
-			FireballSpell* fireballSpell = new FireballSpell(mGameData);
-			fireballSpell->setPosition(mCaster->position);
-			fireballSpell->setTarget(300);
-			fireballSpell->setLifeTime(5);
-			fireballSpell->setDamage(50) ;
-			fireballSpell->setKnockBackDistance(750.0);
-			fireballSpell->setPiercingLayers(0);
-			fireballSpell->setSpellAttackDelay(getSpellAttackDelay());
-			return fireballSpell;
+		Spell* cast(double deltaTime) override {
+			if (canCast(deltaTime)) {
+				MagicSwordSpell* magicSwordSpell = new MagicSwordSpell(mGameData);
+				magicSwordSpell->setPosition(mCaster->position);
+				magicSwordSpell->setTarget(250);
+				magicSwordSpell->setLifeTime(UINT32_MAX);
+				magicSwordSpell->setDamage(100);
+				magicSwordSpell->setKnockBackDistance(0.0);
+				// magicSwordSpell->setPiercingLayers(UINT_MAX);
+				magicSwordSpell->setSpellAttackDelay(getSpellAttackDelay());
+				magicSwordSpell->setTurnSpeed(720);
+				magicSwordSpell->setDelayUntilAttack(0.50);
+				return magicSwordSpell;
+			}
+			else {
+				return nullptr;
+			}
 		}
-		else {
-			return nullptr;
-		}
-	}
 };

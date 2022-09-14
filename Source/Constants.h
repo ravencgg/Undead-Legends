@@ -3,8 +3,8 @@
 #include <float.h>
 
 namespace Constants {
-	static const int		RESOLUTION_X = 1600;
-	static const int		RESOLUTION_Y = 900;
+	static const int		RESOLUTION_X = 1920;
+	static const int		RESOLUTION_Y = 1080;
 	static const double		ENEMY_SPEED = 50;
 	static const double		ENEMY_ACCELERATION = 2500;
 	static const int		TILE_SIZE = 32;
@@ -16,10 +16,13 @@ namespace Constants {
 
 	static const int		DAMAGE_NUMBER_SIZE_E = 1;
 	static const int		DAMAGE_NUMBER_SIZE_P = 1;
-	static const double		DAMAGE_NUMBER_LIFETIME = 0.75;
+	static const double		DAMAGE_NUMBER_LIFETIME = 1.25;
 	static const double		EXPERIENCE_ORB_LIFETIME = DBL_MAX;
 	static const double		EXPERIENCE_RADIUS = 6;
 	static const double		EXPERIENCE_ORB_SPEED = 250;
 	static const int		EXPERIENCE_ORB_EXPERIENCE = 50;
 	static const double		DEFAULT_PICKUP_RADIUS = 200;
+
+	static const int		MAX_MAGIC_SWORDS = 5;
+	static int				currentMagicSwords = 0;
 };
