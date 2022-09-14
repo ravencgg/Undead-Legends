@@ -58,7 +58,6 @@ struct Tile {
 
 class GameData {
 	public:
-		SDL_Renderer*									renderer;
 		Character*										player;
 		Camera											camera;
 		std::vector<Enemy>								enemies;
@@ -77,9 +76,9 @@ void myMemcpy(void* destination, void const* source, size_t size);
 
 double distancePlayer(Vector a, Vector b);
 
-Image loadImage(SDL_Renderer* renderer, const char* fileName);
+Image loadImage(const char* fileName);
 
-Image loadFont(SDL_Renderer* renderer, const char* fileName);
+Image loadFont(const char* fileName);
 
 float randomFloat(float min, float max);
 
@@ -97,9 +96,9 @@ void drawTile(GameData& gameData, Tile tile, float perlin);
 
 void drawCircle(GameData& gameData, Vector position, double radius, int circleOffsetY);
 
-void drawString(Color color, SDL_Renderer* renderer, Image* textImage, int size, std::string string, int x, int y);
+void drawString(Color color, Image* textImage, int size, std::string string, int x, int y);
 
-void drawStringWorldSpace(Color color, GameData& gameData, SDL_Renderer* renderer, Image* textImage, int size, std::string string, int x, int y);
+void drawStringWorldSpace(Color color, GameData& gameData, Image* textImage, int size, std::string string, int x, int y);
 
 DamageNumber createDamageNumber(EntityType type, DamageNumberType damageNumberT, double numberDelay, int damageNumber, Vector position, Vector velocity, int textSize, double lifeTime);
 
@@ -109,6 +108,6 @@ void playEnemyHitSound(GameData& gameData);
 
 void drawDamageNumber(GameData& gameData, DamageNumber& damageNumber, Image* textImage, double deltaTime);
 
-void drawFilledRectangle(SDL_Renderer* renderer, SDL_Rect* rect, int red, int green, int blue, int alpha);
+void drawFilledRectangle(SDL_Rect* rect, int red, int green, int blue, int alpha);
 
-void drawNonFilledRectangle(SDL_Renderer* renderer, SDL_Rect* rect, int red, int green, int blue, int alpha);
+void drawNonFilledRectangle(SDL_Rect* rect, int red, int green, int blue, int alpha);

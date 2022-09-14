@@ -71,7 +71,7 @@ void Spell::collision(Enemy* enemyTargeted) {
 						enemyTargeted->destroyed = true;
 						// totalEnemiesKilled += 1;
 						// Experience Orbs Vector
-						static Image experienceOrbImage = loadImage(mGameData.renderer, "Assets/Experience_Orb_1.png");
+						static Image experienceOrbImage = loadImage("Assets/Experience_Orb_1.png");
 						ExperienceOrb experienceOrb = createExperienceOrb(experienceOrbImage,
 							enemyTargeted->position.x, enemyTargeted->position.y, Constants::EXPERIENCE_ORB_LIFETIME);
 						mGameData.experienceOrbs.push_back(experienceOrb);
@@ -109,7 +109,7 @@ void Spell::draw(GameData& gameData) {
 
 		destRect = convertCameraSpace(gameData.camera, destRect);
 
-		SDL_RenderCopyEx(gameData.renderer, image->texture, &srcRect, &destRect, mAngle, NULL, SDL_FLIP_NONE);
+		R_RenderCopyEx(image->texture, &srcRect, &destRect, mAngle, NULL, SDL_FLIP_NONE);
 
 	}
 	else {
@@ -121,7 +121,7 @@ void Spell::draw(GameData& gameData) {
 
 		destRect = convertCameraSpace(gameData.camera, destRect);
 
-		SDL_RenderCopyEx(gameData.renderer, image->texture, NULL, &destRect, mAngle, NULL, SDL_FLIP_NONE);
+		R_RenderCopyEx(image->texture, NULL, &destRect, mAngle, NULL, SDL_FLIP_NONE);
 	}
 }
 
@@ -161,7 +161,8 @@ void SpikeSpell::setPosition(Vector position) {
 }
 
 Image* SpikeSpell::getImage(GameData& gameData) {
-	static Image spellImage = loadImage(gameData.renderer, "Assets/Weapon_Spike_2.png");
+	REF(gameData);
+	static Image spellImage = loadImage("Assets/Weapon_Spike_2.png");
 	mRadius = returnSpriteSize(spellImage);
 	return &spellImage;
 }
@@ -192,7 +193,8 @@ void ShadowOrbSpell::setPosition(Vector position) {
 }
 
 Image* ShadowOrbSpell::getImage(GameData& gameData) {
-	static Image spellImage = loadImage(gameData.renderer, "Assets/Weapon_ShadowOrb_1.png");
+	REF(gameData);
+	static Image spellImage = loadImage("Assets/Weapon_ShadowOrb_1.png");
 	mRadius = returnSpriteSize(spellImage);
 	return &spellImage;
 }
@@ -203,7 +205,8 @@ void ConsecratedGroundSpell::setPosition(Vector position) {
 }
 
 Image* ConsecratedGroundSpell::getImage(GameData& gameData) {
-	static Image spellImage = loadImage(gameData.renderer, "Assets/Weapon_Consecrated_Ground_1.png");
+    REF(gameData);
+	static Image spellImage = loadImage("Assets/Weapon_Consecrated_Ground_1.png");
 	mRadius = returnSpriteSize(spellImage);
 	return &spellImage;
 }
@@ -214,11 +217,12 @@ void FireballSpell::setPosition(Vector position) {
 }
 
 Image* FireballSpell::getImage(GameData& gameData) {
+    REF(gameData);
 	// "Assets/Fireball_Animated/Fireball_Animated_3_Final-Sheet.png"
 	// "Assets/Fireball_Animated/Fireball_Animated_4_Final-Sheet.png"
 	// "Assets/Fireball_Animated/Fireball_Animated_5_Final-Sheet.png"
 	mFrames = 7;
-	static Image spellImage = loadImage(gameData.renderer, "Assets/Fireball_Animated/Fireball_Animated_5_Final-Sheet.png");
+	static Image spellImage = loadImage("Assets/Fireball_Animated/Fireball_Animated_5_Final-Sheet.png");
 	return &spellImage;
 }
 
@@ -248,9 +252,10 @@ void FireAOESpell::setPosition(Vector position) {
 }
 
 Image* FireAOESpell::getImage(GameData& gameData) {
+    REF(gameData);
 	// "Assets/Weapon_Fireball_AOE_5.png"
 	// "Assets/Weapon_Fireball_AOE_6.png"
-	static Image spellImage = loadImage(gameData.renderer, "Assets/Weapon_Fireball_AOE_6.png");
+	static Image spellImage = loadImage("Assets/Weapon_Fireball_AOE_6.png");
 	mRadius = returnSpriteSize(spellImage);
 	return &spellImage;
 }
@@ -261,9 +266,10 @@ void MagicSwordSpell::setPosition(Vector position) {
 }
 
 Image* MagicSwordSpell::getImage(GameData& gameData) {
+    REF(gameData);
 	// "Assets/Weapon_Magic_Sword_2.png"
 	// "Assets/Weapon_Magic_Sword_3.png"
-	static Image spellImage = loadImage(gameData.renderer, "Assets/Weapon_Magic_Sword_3.png");
+	static Image spellImage = loadImage("Assets/Weapon_Magic_Sword_3.png");
 	mRadius = returnSpriteSize(spellImage);
 	return &spellImage;
 }

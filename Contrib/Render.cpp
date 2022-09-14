@@ -969,7 +969,7 @@ void* R_CreateRenderer(SDL_Window* window)
 
     {
         u32 default_color = 0xFFFFFFFF;
-        s_gl->white_texture = R_CreateTexture(R_PixelFormat_RGBA, 1, 1, 1);
+        s_gl->white_texture = R_CreateTexture(R_PixelFormat_RGBA, 1, 1);
 
         void* pixel;
         int pitch;
@@ -1041,9 +1041,8 @@ void R_DestroyRenderer()
     }
 }
 
-R_Texture* R_CreateTexture(R_PixelFormat format, int access, int width, int height)
+R_Texture* R_CreateTexture(R_PixelFormat format, int width, int height)
 {
-    REF(access);
     GLenum gl_format, internal_format;
     if (!PixelFormatToGLFormats(format, &gl_format, &internal_format))
     {

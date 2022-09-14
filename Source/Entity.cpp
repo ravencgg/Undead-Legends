@@ -92,7 +92,7 @@ void drawEntity(GameData& gameData, Entity* entity) {
 
 	rect = convertCameraSpace(gameData.camera, rect);
 
-	SDL_RenderCopyEx(gameData.renderer, entity->sprite.image.texture, NULL, &rect, entity->angle, NULL, SDL_FLIP_NONE);
+	R_RenderCopyEx(entity->sprite.image.texture, NULL, &rect, entity->angle, NULL, SDL_FLIP_NONE);
 }
 
 void drawEntityAnimated(GameData& gameData, Entity* entity, bool facingDirection) {
@@ -125,10 +125,10 @@ void drawEntityAnimated(GameData& gameData, Entity* entity, bool facingDirection
 	destRect = convertCameraSpace(gameData.camera, destRect);
 	// True if right
 	if (facingDirection) {
-		SDL_RenderCopyEx(gameData.renderer, entity->sprite.image.texture, &srcRect, &destRect, entity->angle, NULL, SDL_FLIP_HORIZONTAL);
+		R_RenderCopyEx(entity->sprite.image.texture, &srcRect, &destRect, entity->angle, NULL, SDL_FLIP_HORIZONTAL);
 	}
 	else {
-		SDL_RenderCopyEx(gameData.renderer, entity->sprite.image.texture, &srcRect, &destRect, entity->angle, NULL, SDL_FLIP_NONE);
+		R_RenderCopyEx(entity->sprite.image.texture, &srcRect, &destRect, entity->angle, NULL, SDL_FLIP_NONE);
 	}
 }
 
@@ -152,10 +152,10 @@ void drawDeathAnimation(GameData& gameData, DeathAnimation* deathAnimation, bool
 
 		// True = right
 		if (facingDirection) {
-			SDL_RenderCopyEx(gameData.renderer, deathAnimation->sprite.image.texture, &srcRect, &destRect, deathAnimation->angle, NULL, SDL_FLIP_HORIZONTAL);
+			R_RenderCopyEx(deathAnimation->sprite.image.texture, &srcRect, &destRect, deathAnimation->angle, NULL, SDL_FLIP_HORIZONTAL);
 		}
 		else {
-			SDL_RenderCopyEx(gameData.renderer, deathAnimation->sprite.image.texture, &srcRect, &destRect, deathAnimation->angle, NULL, SDL_FLIP_NONE);
+			R_RenderCopyEx(deathAnimation->sprite.image.texture, &srcRect, &destRect, deathAnimation->angle, NULL, SDL_FLIP_NONE);
 		}
 
 		// The frame we want it to pause on while being hit
@@ -205,10 +205,10 @@ void drawCharacterIdle(GameData& gameData, Entity* entity, bool right) {
 
 	destRect = convertCameraSpace(gameData.camera, destRect);
 	if (right) {
-		SDL_RenderCopyEx(gameData.renderer, entity->sprite.image.texture, &srcRect, &destRect, entity->angle, NULL, SDL_FLIP_HORIZONTAL);
+		R_RenderCopyEx(entity->sprite.image.texture, &srcRect, &destRect, entity->angle, NULL, SDL_FLIP_HORIZONTAL);
 	}
 	else {
-		SDL_RenderCopyEx(gameData.renderer, entity->sprite.image.texture, &srcRect, &destRect, entity->angle, NULL, SDL_FLIP_NONE);
+		R_RenderCopyEx(entity->sprite.image.texture, &srcRect, &destRect, entity->angle, NULL, SDL_FLIP_NONE);
 	}
 }
 
@@ -306,7 +306,7 @@ void activateExpKnockback(Character* player, ExperienceOrb* expOrb, double knock
 }
 */
 
-void drawHealthBar(GameData& gameData, SDL_Renderer* renderer) {
+void drawHealthBar(GameData& gameData) {
 	SDL_Rect remainingHP = {};
 	SDL_Rect missingHP = {};
 	SDL_Rect outlineHP = {};
@@ -333,16 +333,16 @@ void drawHealthBar(GameData& gameData, SDL_Renderer* renderer) {
 	outlineHP.y = (int)(gameData.player->position.y + 47);
 
 	SDL_Rect remainingHPRect = convertCameraSpaceScreenWH(gameData.camera, remainingHP);
-	drawFilledRectangle(renderer, &remainingHPRect, 255, 140, 0, 255);
+	drawFilledRectangle(&remainingHPRect, 255, 140, 0, 255);
 
 	SDL_Rect missingHPRect = convertCameraSpaceScreenWH(gameData.camera, missingHP);
-	drawFilledRectangle(renderer, &missingHPRect, 255, 0, 0, 255);
+	drawFilledRectangle(&missingHPRect, 255, 0, 0, 255);
 
 	SDL_Rect outlineHPRect = convertCameraSpaceScreenWH(gameData.camera, outlineHP);;
-	drawNonFilledRectangle(renderer, &outlineHPRect, 0, 0, 0, 255);
+	drawNonFilledRectangle(&outlineHPRect, 0, 0, 0, 255);
 }
 
-void drawExperienceBar(GameData& gameData, SDL_Renderer* renderer) {
+void drawExperienceBar(GameData& gameData) {
 	SDL_Rect currentEXP = {};
 	SDL_Rect missingEXP = {};
 	SDL_Rect outlineEXP = {};
@@ -369,15 +369,15 @@ void drawExperienceBar(GameData& gameData, SDL_Renderer* renderer) {
 	outlineEXP.y = (int)(gameData.player->position.y + 425);
 
 	SDL_Rect currentEXPRect = convertCameraSpaceScreenWH(gameData.camera, currentEXP);
-	drawFilledRectangle(renderer, &currentEXPRect, 255, 127, 80, 255);
+	drawFilledRectangle(&currentEXPRect, 255, 127, 80, 255);
 
 #if 0
 	SDL_Rect missingEXPRect = convertCameraSpaceScreenWH(gameData.camera, missingEXP);
-	drawFilledRectangle(renderer, &missingEXPRect, 255, 255, 255, 255);
+	drawFilledRectangle(&missingEXPRect, 255, 255, 255, 255);
 #endif
 
 	SDL_Rect outlineEXPRect = convertCameraSpaceScreenWH(gameData.camera, outlineEXP);;
-	drawNonFilledRectangle(renderer, &outlineEXPRect, 0, 0, 0, 255);
+	drawNonFilledRectangle(&outlineEXPRect, 0, 0, 0, 255);
 }
 
 void destroyEnemies(GameData& gameData) {
