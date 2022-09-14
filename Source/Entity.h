@@ -101,8 +101,8 @@ ExperienceOrb createExperienceOrb(Image image, double positionX, double position
 
 // void activateExpKnockback(Character* player, ExperienceOrb* expOrb, double knockbackDistance);
 
-void drawHealthBar(GameData& gameData, SDL_Renderer* renderer);
+void drawHealthBar(GameData& gameData);
 
-void drawExperienceBar(GameData& gameData, SDL_Renderer* renderer);
+void drawExperienceBar(GameData& gameData);
 
 void destroyEnemies(GameData& gameData);

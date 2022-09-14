@@ -26,22 +26,20 @@ double distancePlayer(Vector a, Vector b) {
 	return result;
 }
 
-Image loadImage(SDL_Renderer* renderer, const char* fileName) {
+Image loadImage(const char* fileName) {
 	Image result;
 
 	int x, y, n;
 	unsigned char* data = stbi_load(fileName, &x, &y, &n, 4);
 
-	SDL_Texture* texture = SDL_CreateTexture(renderer,
-		SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING,
-		x, y);
+	R_Texture* texture = R_CreateTexture(R_PixelFormat_RGBA, x, y);
 
 	int pitch;
 	void* pixels;
 
 	// Locking the texture gives us a position in memory
 	// While the texture is locked, you can write to the texture
-	SDL_LockTexture(texture, NULL, &pixels, &pitch);
+	R_LockTexture(texture, NULL, &pixels, &pitch);
 
 	myMemcpy(pixels, data, ((size_t)x * (size_t)y * 4));
 
@@ -50,9 +48,9 @@ Image loadImage(SDL_Renderer* renderer, const char* fileName) {
 	// stbi_image_free(data);
 
 	// When the texture is unlocked, you can no longer write to it
-	SDL_UnlockTexture(texture);
+	R_UnlockTexture(texture);
 
-	SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+	R_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
 
 	result.pixelData = data;
 	result.texture = texture;
@@ -62,7 +60,7 @@ Image loadImage(SDL_Renderer* renderer, const char* fileName) {
 	return result;
 }
 
-Image loadFont(SDL_Renderer* renderer, const char* fileName) {
+Image loadFont(const char* fileName) {
 	Image result;
 	int x, y, n;
 
@@ -84,19 +82,19 @@ Image loadFont(SDL_Renderer* renderer, const char* fileName) {
 		readPixels += 4;
 	}
 
-	SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, x, y);
+	R_Texture* texture = R_CreateTexture(R_PixelFormat_RGBA, x, y);
 
 	void* pixels;
 	int pitch;
 	int area = (x * y * 4);
 
-	SDL_LockTexture(texture, NULL, &pixels, &pitch);
+	R_LockTexture(texture, NULL, &pixels, &pitch);
 
 	myMemcpy(pixels, fileData, area);
 
-	SDL_UnlockTexture(texture);
+	R_UnlockTexture(texture);
 
-	SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+	R_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
 
 	result.pixelData = fileData;
 	result.texture = texture;
@@ -205,7 +203,7 @@ void drawTile(GameData& gameData, Tile tile, float perlin) {
 	}
 	rect = convertCameraSpace(gameData.camera, rect);
 
-	SDL_RenderCopyEx(gameData.renderer, gameData.tileTypeArray[tile.tileType].texture, NULL, &rect, 0, NULL, SDL_FLIP_NONE);
+	R_RenderCopyEx(gameData.tileTypeArray[tile.tileType].texture, NULL, &rect, 0, NULL, SDL_FLIP_NONE);
 }
 
 void drawCircle(GameData& gameData, Vector position, double radius, int circleOffsetY) {
@@ -232,12 +230,12 @@ void drawCircle(GameData& gameData, Vector position, double radius, int circleOf
 		rectangle2.y = (int)y2;
 		rectangle2 = convertCameraSpace(gameData.camera, rectangle2);
 
-		SDL_RenderDrawLine(gameData.renderer, rectangle1.x, rectangle1.y, rectangle2.x, rectangle2.y);
+		R_RenderDrawLine(rectangle1.x, rectangle1.y, rectangle2.x, rectangle2.y);
 
 	}
 }
 
-void drawString(Color color, SDL_Renderer* renderer, Image* textImage, int size, std::string string, int x, int y) {
+void drawString(Color color, Image* textImage, int size, std::string string, int x, int y) {
 	SDL_Rect sourceRect = {};
 	// Font 1
 	// int fontW = 7;
@@ -268,19 +266,19 @@ void drawString(Color color, SDL_Renderer* renderer, Image* textImage, int size,
 		destinationRect.w = fontW * size;
 		destinationRect.h = fontH * size;
 
-		SDL_SetTextureColorMod(textImage->texture, color.r, color.g, color.b);
+		R_SetTextureColorMod(textImage->texture, color.r, color.g, color.b);
 
-		SDL_RenderCopy(renderer, textImage->texture, &sourceRect, &destinationRect);
+		R_RenderCopy(textImage->texture, &sourceRect, &destinationRect);
 		spacing += destinationRect.w;
 	}
 }
 
-void drawStringWorldSpace(Color color, GameData& gameData, SDL_Renderer* renderer, Image* textImage, int size, std::string string, int x, int y) {
+void drawStringWorldSpace(Color color, GameData& gameData, Image* textImage, int size, std::string string, int x, int y) {
 	SDL_Rect destRect = {};
 	destRect.x = x;
 	destRect.y = y;
 	destRect = convertCameraSpace(gameData.camera, destRect);
-	drawString(color, renderer, textImage, size, string, destRect.x, destRect.y);
+	drawString(color, textImage, size, string, destRect.x, destRect.y);
 }
 
 DamageNumber createDamageNumber(EntityType type, DamageNumberType damageNumberT, double numberDelay, int damageNumber, Vector position, Vector velocity, int textSize, double lifeTime) {
@@ -375,16 +373,16 @@ void drawDamageNumber(GameData& gameData, DamageNumber& damageNumber, Image* tex
 		color.b = 255;
 	}
 
-	drawStringWorldSpace(color, gameData, gameData.renderer, textImage, damageNumber.textSize, damageNumber.damageString,
+	drawStringWorldSpace(color, gameData, textImage, damageNumber.textSize, damageNumber.damageString,
 		(int)damageNumber.position.x, (int)damageNumber.position.y);
 }
 
-void drawFilledRectangle(SDL_Renderer* renderer, SDL_Rect* rect, int red, int green, int blue, int alpha) {
-	SDL_SetRenderDrawColor(renderer, (Uint8)red, (Uint8)green, (Uint8)blue, (Uint8)alpha);
-	SDL_RenderFillRect(renderer, rect);
+void drawFilledRectangle(SDL_Rect* rect, int red, int green, int blue, int alpha) {
+	R_SetRenderDrawColor((Uint8)red, (Uint8)green, (Uint8)blue, (Uint8)alpha);
+	R_RenderFillRect(rect);
 }
 
-void drawNonFilledRectangle(SDL_Renderer* renderer, SDL_Rect* rect, int red, int green, int blue, int alpha) {
-	SDL_SetRenderDrawColor(renderer, (Uint8)red, (Uint8)green, (Uint8)blue, (Uint8)alpha);
-	SDL_RenderDrawRect(renderer, rect);
+void drawNonFilledRectangle(SDL_Rect* rect, int red, int green, int blue, int alpha) {
+	R_SetRenderDrawColor((Uint8)red, (Uint8)green, (Uint8)blue, (Uint8)alpha);
+	R_RenderDrawRect(rect);
 }

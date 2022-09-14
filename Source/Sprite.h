@@ -8,7 +8,7 @@ struct Vector {
 
 struct Image {
 	unsigned char*		pixelData = nullptr;
-	SDL_Texture*		texture = nullptr;
+	R_Texture*			texture = nullptr;
 	int					w = 0;
 	int					h = 0;
 };

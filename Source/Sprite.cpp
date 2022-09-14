@@ -2,7 +2,7 @@
 
 Sprite createSprite(Image image) {
 	Sprite result = {};
-	SDL_QueryTexture(image.texture, NULL, NULL, &result.width, &result.height);
+	R_QueryTexture(image.texture, NULL, NULL, &result.width, &result.height);
 	result.image = image;
 	return result;
 }

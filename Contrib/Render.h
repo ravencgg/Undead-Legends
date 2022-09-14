@@ -3,39 +3,16 @@
 #include "SDL.h"
 
 #define USE_GL 1
+#define REF(V) ((void)V)
 
 struct R_Texture;
 
-#if USE_GL
-
-#define REF(V) ((void)V)
-
-#define SDL_Texture R_Texture
-
-#define SDL_PIXELFORMAT_RGBA32 R_PixelFormat_RGBA
-
-#define SDL_CreateRenderer(window, ...) (SDL_Renderer*)R_CreateRenderer(window)
-#define SDL_RenderClear(...) R_RenderClear()
-#define SDL_RenderPresent(...) R_RenderPresent()
-#define SDL_RenderCopy(renderer, ...) REF(renderer); R_RenderCopy(__VA_ARGS__) 
-#define SDL_RenderCopyEx(renderer, ...) REF(renderer); R_RenderCopyEx(__VA_ARGS__)
-#define SDL_RenderDrawLine(renderer, ...) REF(renderer); R_RenderDrawLine(__VA_ARGS__);
-#define SDL_RenderFillRect(renderer, ...) REF(renderer); R_RenderFillRect(__VA_ARGS__);
-#define SDL_RenderDrawRect(renderer, ...) REF(renderer); R_RenderDrawRect(__VA_ARGS__);
-
-#define SDL_SetRenderDrawColor(renderer, ...) REF(renderer); R_SetRenderDrawColor(__VA_ARGS__)
-#define SDL_SetRenderDrawBlendMode(renderer, ...) REF(renderer); R_SetRenderDrawBlendMode(__VA_ARGS__)
-#define SDL_SetTextureColorMod(...) R_SetTextureColorMod(__VA_ARGS__)
-#define SDL_SetTextureBlendMode(...) R_SetTextureBlendMode(__VA_ARGS__)
-
-// Textures:
-#define SDL_CreateTexture(renderer, ...) R_CreateTexture(__VA_ARGS__); REF(renderer)
-#define SDL_DestroyTexture(...) R_DestroyTexture(__VA_ARGS__)
-#define SDL_LockTexture(...) R_LockTexture(__VA_ARGS__)
-#define SDL_UnlockTexture(...) R_UnlockTexture(__VA_ARGS__)
-#define SDL_QueryTexture(...) R_QueryTexture(__VA_ARGS__)
-
-#endif
+enum R_PixelFormat
+{
+    R_PixelFormat_Invalid,
+    R_PixelFormat_RGBA,
+    R_PixelFormat_R,
+};
 
 // Drawing:
 //
@@ -54,22 +31,12 @@ void        R_RenderCopyEx(R_Texture* texture,
                            SDL_Point* center,
                            SDL_RendererFlip flip);
 
-
-enum R_PixelFormat
-{
-    R_PixelFormat_Invalid,
-    R_PixelFormat_RGBA,
-    R_PixelFormat_R,
-};
-
-
 // Renderer:
 void*       R_CreateRenderer(SDL_Window* window);
 void        R_DestroyRenderer();
 
 // Textures:
 R_Texture*  R_CreateTexture(R_PixelFormat format,
-                            int access,
                             int width,
                             int height);
 void        R_DestroyTexture(R_Texture* texture);

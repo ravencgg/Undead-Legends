@@ -97,52 +97,49 @@ int main(int argc, char** argv) {
 		Constants::RESOLUTION_X, Constants::RESOLUTION_Y, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
 
 	// -1 = default gpu
-	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1,
-		SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-
-	gameData.renderer = renderer;
+    R_CreateRenderer(window);
 
 	// Maps Types
-	Image mapA = loadImage(renderer, "Assets/Map_1.png");
+	Image mapA = loadImage("Assets/Map_1.png");
 
 	// Player Types
-	Image characterSizeTest = loadImage(renderer, "Assets/Character_Size_Test_1.png");
-	Image characterDemon = loadImage(renderer, "Assets/Character_Demon_8.png");
-	Image characterDemonAnimated = loadImage(renderer, "Assets/Character_Demon_2_Sprite_Sheet_2.png");
-	Image characterMaiden = loadImage(renderer, "Assets/Character_Maiden_1.png");
-	Image characterGhoul = loadImage(renderer, "Assets/Character_Ghoul_5.png");
-	Image characterVampireA = loadImage(renderer, "Assets/Character_Vampire_4.png");
-	Image characterVampireB = loadImage(renderer, "Assets/Character_Vampire_5_ShortHair.png");
-	Image characterFrankensteinCreation = loadImage(renderer, "Assets/Character_FrankensteinCreation_1.png");
-	Image characterSkeleton = loadImage(renderer, "Assets/Character_Skeleton_1.png");
+	Image characterSizeTest = loadImage("Assets/Character_Size_Test_1.png");
+	Image characterDemon = loadImage("Assets/Character_Demon_8.png");
+	Image characterDemonAnimated = loadImage("Assets/Character_Demon_2_Sprite_Sheet_2.png");
+	Image characterMaiden = loadImage("Assets/Character_Maiden_1.png");
+	Image characterGhoul = loadImage("Assets/Character_Ghoul_5.png");
+	Image characterVampireA = loadImage("Assets/Character_Vampire_4.png");
+	Image characterVampireB = loadImage("Assets/Character_Vampire_5_ShortHair.png");
+	Image characterFrankensteinCreation = loadImage("Assets/Character_FrankensteinCreation_1.png");
+	Image characterSkeleton = loadImage("Assets/Character_Skeleton_1.png");
 	// "Assets/Character_Ice_Golem_1.png"
-	Image characterDemonTest = loadImage(renderer, "Assets/Character_Demon_7.png");
+	Image characterDemonTest = loadImage("Assets/Character_Demon_7.png");
 
-	Image characterIceGolem = loadImage(renderer, "Assets/Character_Ice_Golem_3.png");
+	Image characterIceGolem = loadImage("Assets/Character_Ice_Golem_3.png");
 	
 	// Enemy Types
-	// Image enemyBat = loadImage(renderer, "Assets/Enemy_VampireBat_1.png");
-	Image enemyBatAnimated = loadImage(renderer, "Assets/Enemy_VampireBat_1_SpriteSheet.png");
-	// Image enemyGargoyle = loadImage(renderer, "Assets/Enemy_Gargoyle_1.png");
-	// Image enemyGargoyle = loadImage(renderer, "Assets/Enemy_Gargoyle_1_Smaller.png");
-	Image enemyGargoyleAnimated = loadImage(renderer, "Assets/Enemy_Gargoyle_1_Smaller_Sprite_Sheet.png"); 
-	Image enemyFlower = loadImage(renderer, "Assets/Ememy_Flower_1.png");
+	// Image enemyBat = loadImage("Assets/Enemy_VampireBat_1.png");
+	Image enemyBatAnimated = loadImage("Assets/Enemy_VampireBat_1_SpriteSheet.png");
+	// Image enemyGargoyle = loadImage("Assets/Enemy_Gargoyle_1.png");
+	// Image enemyGargoyle = loadImage("Assets/Enemy_Gargoyle_1_Smaller.png");
+	Image enemyGargoyleAnimated = loadImage("Assets/Enemy_Gargoyle_1_Smaller_Sprite_Sheet.png"); 
+	Image enemyFlower = loadImage("Assets/Ememy_Flower_1.png");
 	Image enemyType = {};
 	enemyType = enemyBatAnimated;
 
-	Image batDeathSpriteSheet = loadImage(renderer, "Assets/Enemy_VampireBat_Death_Sprite-Sheet.png");
+	Image batDeathSpriteSheet = loadImage("Assets/Enemy_VampireBat_Death_Sprite-Sheet.png");
 
-	Image experienceOrbImage = loadImage(renderer, "Assets/Experience_Orb_1.png");
+	Image experienceOrbImage = loadImage("Assets/Experience_Orb_1.png");
 	
 	int fontSize = 1;
-	// Image font = loadFont(renderer, "Assets/Font_1.png");
-	// Image font = loadFont(renderer, "Assets/Font_2.png");
-	Image font = loadFont(renderer, "Assets/Font_3.png");
+	// Image font = loadFont("Assets/Font_1.png");
+	// Image font = loadFont("Assets/Font_2.png");
+	Image font = loadFont("Assets/Font_3.png");
 
 	// Map Tiles
-	gameData.tileTypeArray[TILE_GRASS] = loadImage(renderer, "Assets/grassTile.png");
-	gameData.tileTypeArray[TILE_DIRT] = loadImage(renderer, "Assets/dirtTile.png");
-	gameData.tileTypeArray[TILE_ROCK] = loadImage(renderer, "Assets/rockTile.png");
+	gameData.tileTypeArray[TILE_GRASS] = loadImage("Assets/grassTile.png");
+	gameData.tileTypeArray[TILE_DIRT] = loadImage("Assets/dirtTile.png");
+	gameData.tileTypeArray[TILE_ROCK] = loadImage("Assets/rockTile.png");
 
 	createCharacter(gameData, characterDemon, 100, false, 300, 1);
 	
@@ -438,8 +435,8 @@ int main(int argc, char** argv) {
 
 		// Clear what we are drawing to
 		// Anything done before render clear gets erased
-		SDL_RenderClear(renderer);
-		SDL_RenderCopy(renderer, mapA.texture, NULL, NULL);
+		R_RenderClear();
+		R_RenderCopy(mapA.texture, NULL, NULL);
 
 		for (int w = 0; w < (Constants::RESOLUTION_X / Constants::TILE_SIZE) + 2; w++) {
 			for (int h = 0; h < (Constants::RESOLUTION_Y / Constants::TILE_SIZE) + 2; h++) {
@@ -453,7 +450,7 @@ int main(int argc, char** argv) {
 			}
 		}
 
-		drawHealthBar(gameData, renderer);
+		drawHealthBar(gameData);
 
 		Color textColor = {};
 		textColor.r = 255;
@@ -484,7 +481,7 @@ int main(int argc, char** argv) {
 			if (!gameData.enemies[i].destroyed) {
 				// Check to see if the boolean value is true when the enemy was created. If it was, draw it.
 				double damagePercent = (double)gameData.enemies[i].hp / (double)gameData.enemies[i].maxHP;
-				SDL_SetTextureColorMod(gameData.enemies[i].sprite.image.texture, (Uint8)255, (Uint8)(100 + (155 * damagePercent)), (Uint8)(100 + (155 * damagePercent)));
+				R_SetTextureColorMod(gameData.enemies[i].sprite.image.texture, (Uint8)255, (Uint8)(100 + (155 * damagePercent)), (Uint8)(100 + (155 * damagePercent)));
 				if (gameData.enemies[i].animated) {
 					drawEntityAnimated(gameData, &gameData.enemies[i], gameData.enemies[i].position.x < gameData.player->position.x);
 				}
@@ -505,7 +502,7 @@ int main(int argc, char** argv) {
 			gameData.deathAnimations[i].timeUntilNextFrame -= deltaTime;
 		}
 
-		drawExperienceBar(gameData, renderer);
+		drawExperienceBar(gameData);
 
 		// Draw Damage Numbers
 		for (int i = 0; i < gameData.damageNumbers.size(); i++) {
@@ -532,20 +529,20 @@ int main(int argc, char** argv) {
 		experienceTracker += std::string("/");
 		experienceTracker += std::to_string(gameData.player->levelUp);
 		int numberOfPixelsW = (int)experienceTracker.size() * 14;
-		drawString(textColor, renderer, &font, fontSize, experienceTracker, (Constants::RESOLUTION_X / 2) - (numberOfPixelsW / 2), 865);
+		drawString(textColor, &font, fontSize, experienceTracker, (Constants::RESOLUTION_X / 2) - (numberOfPixelsW / 2), 865);
 
 		// Level tracker
 		std::string levelTracker = std::string("Level: ");
 		levelTracker += std::to_string(gameData.player->level);
 		int pixelWidthLeveltracker = (int)levelTracker.size() * 14;
-		drawString(textColor, renderer, &font, fontSize, levelTracker, (Constants::RESOLUTION_X / 2) - (pixelWidthLeveltracker / 2), 835);
+		drawString(textColor, &font, fontSize, levelTracker, (Constants::RESOLUTION_X / 2) - (pixelWidthLeveltracker / 2), 835);
 
 		// Kill tracker
-		drawString(textColor, gameData.renderer, &font, fontSize, std::string("Kills: "), 10, 10);
-		drawString(textColor, gameData.renderer, &font, fontSize, std::to_string(totalEnemiesKilled), 100, 10);
+		drawString(textColor, &font, fontSize, std::string("Kills: "), 10, 10);
+		drawString(textColor, &font, fontSize, std::to_string(totalEnemiesKilled), 100, 10);
 
 		// After renderPresent, the frame is over
-		SDL_RenderPresent(renderer);
+		R_RenderPresent();
 
 		// [] syntax for lambda
 		// erase_if is going over every element and asking you if 
