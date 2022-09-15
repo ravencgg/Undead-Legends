@@ -103,18 +103,12 @@ void drawDeathAnimation(GameData& gameData, DeathAnimation* deathAnimation, bool
 	int frames = deathAnimation->sprite.image.num_frames;
 	if (deathAnimation->currentFrame < frames) {
 		R_Rect srcRect = {};
-		R_Rect destRect = {};
+		R_Rect destRect = MakeEntityRect(deathAnimation);
 
 		srcRect.w = deathAnimation->sprite.width / frames;
 		srcRect.h = deathAnimation->sprite.height;
 
 		srcRect.x = srcRect.w * deathAnimation->currentFrame;
-
-		destRect.w = srcRect.w;
-		destRect.h = srcRect.h;
-
-		destRect.x = (int)deathAnimation->position.x;
-		destRect.y = (int)deathAnimation->position.y;
 
 		// True = right
 		if (facingDirection) {

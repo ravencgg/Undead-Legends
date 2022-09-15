@@ -46,7 +46,7 @@ void Spell::collision(Enemy* enemyTargeted) {
 				Vector numberVelocity = {};
 
 				if (mNumberOfHits <= 0) {
-					printf("ERROR: Spell::Collision function (numberOfHits is 0) DANGER!! NANS INCOMING");
+					printf("ERROR: Spell::Collision function (numberOfHits is 0) DANGER!! NANS INCOMING\n");
 				}
 				else {
 					// Truncates integers. Need to fix this at somepoint. Transition to floats?
@@ -84,7 +84,7 @@ void Spell::collision(Enemy* enemyTargeted) {
 				}
 			}
 			else {
-				printf("ERROR: Spell::Collision function (Damage dealt < 0)");
+				printf("ERROR: Spell::Collision function (Damage dealt < 0)\n");
 			}
 		}
 	}

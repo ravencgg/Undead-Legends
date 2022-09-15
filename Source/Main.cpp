@@ -431,7 +431,7 @@ int main(int argc, char** argv) {
 			}
 		}
 
-		gameData.camera.position = {};// gameData.player->position;
+		gameData.camera.position = gameData.player->position;
 		gameData.camera.size = { Constants::RESOLUTION_X, Constants::RESOLUTION_Y };
 
         R_View view = {
