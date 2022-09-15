@@ -18,7 +18,6 @@ class Entity {
 		int						hp = 0;
 		int						maxHP = 0;
 
-		int						frames = 0;
 		int						speed = 0;
 		bool					animated = false;
 
@@ -73,7 +72,9 @@ class ExperienceOrb : public Entity {
 		int						experienceGained = 0;
 };
 
-void createCharacter(GameData& gameData, Image image, int healthPoints, bool animated, int speed, int frames);
+R_Rect MakeEntityRect(Entity* entity);
+
+void createCharacter(GameData& gameData, Image image, int healthPoints, bool animated, int speed);
 
 void updateEntityPosition(Entity* entity, double delta);
 
@@ -85,9 +86,9 @@ void drawDeathAnimation(GameData& gameData, DeathAnimation* deathAnimation, bool
 
 void drawCharacterIdle(GameData& gameData, Entity* entity, bool right);
 
-void createEnemy(Image image, Vector position, GameData* gameData, int healthPoints, int damage, bool animated, int speed, int frames);
+void createEnemy(Image image, Vector position, GameData* gameData, int healthPoints, int damage, bool animated, int speed);
 
-void createDeathAnimation(Image image, Vector position, GameData& gameData, int frames, int timesHit);
+void createDeathAnimation(Image image, Vector position, GameData& gameData, int timesHit);
 
 int closestEnemy(Character* player, GameData* gameData);
 

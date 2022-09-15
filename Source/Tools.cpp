@@ -1,5 +1,29 @@
 #include "Tools.h"
 
+R_Rect MakeRect(Vector center, Vector size)
+{
+	R_Rect result;
+	double hw = size.x / 2.0;
+	double hh = size.y / 2.0;
+	result.x = (center.x - hw);
+	result.y = (center.y - hh);
+	result.w = size.x;
+	result.h = size.y;
+	return result;
+}
+
+R_Rect MakeRect(Vector center, Sprite* sprite)
+{
+	Vector size = { (double)sprite->width / sprite->image.num_frames, (double)sprite->height };
+	return MakeRect(center, size);
+}
+
+R_Rect MakeRect(Vector center, Image* image)
+{
+	Vector size = { (double)image->w / image->num_frames, (double)image->h };
+	return MakeRect(center, size);
+}
+
 double getTime() {
 	return SDL_GetTicks() / 1000.0;
 }

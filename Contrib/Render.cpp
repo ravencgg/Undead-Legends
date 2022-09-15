@@ -635,8 +635,9 @@ struct OpenGL
     glShaderConstants constants;
 
 // Transient:
-    bool        post_present;
-    Matrix4     current_ortho_matrix;
+    Matrix4     ui_matrix;
+    Matrix4     world_matrix;
+
     Vector4     current_render_color;
 };
 OpenGL* s_gl;
@@ -897,7 +898,6 @@ void* R_CreateRenderer(SDL_Window* window)
     s_gl = result;
     result->window = window;
     result->current_render_color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    result->post_present = true;
 
 #if UL_WINDOWS
     SDL_SysWMinfo wmInfo;
@@ -1263,6 +1263,13 @@ static void MakeOrthoMatrix(Matrix4* m, float left, float right, float bottom, f
 	m->m[3][1] = -(top + bottom) / (top - bottom);
 }
 
+static void MakeOrthoMatrix(Matrix4* m, R_View view)
+{
+    float hw = (float)view.sx / 2.0f;
+    float hh = (float)view.sy / 2.0f;
+    MakeOrthoMatrix(m, (float)view.x - hw, (float)view.x + hw, (float)view.y + hh, (float)view.y - hh);
+}
+
 static void SetDefaultMatrix()
 {
     if (s_gl->active_shader)
@@ -1280,40 +1287,42 @@ static void ClearBuffer(GPUBuffer* buffer)
     buffer->used = 0;
 }
 
-// NOTE: using R_RenderClear as a BeginFrame function, which won't be correct when there
-// are multiple render targets
+//                Center
+void R_BeginFrame(R_View view)
+{
+    if (!s_gl || !s_gl->window)
+        return;
+
+    OpenGL* gl = s_gl;
+    SDL_Window* window = gl->window;
+    SDL_GL_GetDrawableSize(window, &gl->frame_width, &gl->frame_height);
+
+    MakeOrthoMatrix(&gl->world_matrix, view);
+    MakeOrthoMatrix(&gl->ui_matrix, 0, (float)gl->frame_width, (float)gl->frame_height, 0);
+    R_BeginWorldDrawing();
+
+    s32 width = gl->frame_width;
+    s32 height = gl->frame_height;
+    gl->constants.c_screen_size.x = float(width);
+    gl->constants.c_screen_size.y = float(height);
+    glViewport(0, 0, width, height);
+
+    for (u32 shader_index = 0; shader_index < Shader_Count; ++shader_index)
+    {
+        SetShader(ShaderType(shader_index));
+        SetDefaultMatrix();
+    }
+
+    ClearBuffer(&gl->vertex_buffer);
+    ClearBuffer(&gl->index_buffer);
+}
+
 void R_RenderClear()
 {
     if (!s_gl || !s_gl->window)
         return;
 
     OpenGL* gl = s_gl;
-    if (gl->post_present)
-    {
-        // Do this on the first clear of a frame. Not correct overall, but correct
-        // while transitioning APIs from SDL to opengl
-        gl->post_present = false;
-
-        SDL_Window* window = gl->window;
-        SDL_GL_GetDrawableSize(window, &gl->frame_width, &gl->frame_height);
-
-        MakeOrthoMatrix(&gl->constants.c_mvp, 0, (float)gl->frame_width, (float)gl->frame_height, 0);
-        s32 width = gl->frame_width;
-        s32 height = gl->frame_height;
-        gl->constants.c_screen_size.x = float(width);
-        gl->constants.c_screen_size.y = float(height);
-        glViewport(0, 0, width, height);
-
-        for (u32 shader_index = 0; shader_index < Shader_Count; ++shader_index)
-        {
-            SetShader(ShaderType(shader_index));
-            SetDefaultMatrix();
-        }
-
-        ClearBuffer(&gl->vertex_buffer);
-        ClearBuffer(&gl->index_buffer);
-    }
-
     Vector4 clear_color = gl->current_render_color;
     glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1321,8 +1330,6 @@ void R_RenderClear()
 
 void R_RenderPresent()
 {
-    s_gl->post_present = true;
-
 #if UL_WINDOWS
     SwapBuffers((HDC)s_gl->dc);
 #else
@@ -1344,7 +1351,7 @@ void R_SetRenderDrawBlendMode(SDL_BlendMode mode)
     R_SetTextureBlendMode(s_gl->white_texture, mode);
 }
 
-void R_RenderCopy(R_Texture* texture, SDL_Rect* source, SDL_Rect* dest)
+void R_RenderCopy(R_Texture* texture, R_Rect* source, R_Rect* dest)
 {
     R_RenderCopyEx(texture, source, dest, 0, NULL, SDL_FLIP_NONE);
 }
@@ -1500,11 +1507,11 @@ static void UpdateShaderUniforms()
     SetUniform(shader->u_rounding,          s_gl->constants.cr_rounding);
 }
 
-static void RenderImpl(R_Texture* texture, SDL_Rect* source, SDL_Rect* dest, double angle, SDL_Point* center, SDL_RendererFlip flip)
+static void RenderImpl(R_Texture* texture, R_Rect* source, R_Rect* dest, double angle, SDL_Point* center, SDL_RendererFlip flip)
 {
     s32 width = texture ? texture->width : 1;
     s32 height = texture ? texture->height : 1;
-    SDL_Rect s, d;
+    R_Rect s, d;
     if (source)
     {
         s = *source;
@@ -1540,10 +1547,10 @@ static void RenderImpl(R_Texture* texture, SDL_Rect* source, SDL_Rect* dest, dou
     //   2     3
 
     Vector2 positions[4] = {
-        { (float)d.x,       (float)d.y       },
-        { (float)d.x + d.w, (float)d.y       },
-        { (float)d.x,       (float)d.y + d.h },
-        { (float)d.x + d.w, (float)d.y + d.h },
+        { (float)(d.x),       (float)(d.y)       },
+        { (float)(d.x + d.w), (float)(d.y)       },
+        { (float)(d.x),       (float)(d.y + d.h) },
+        { (float)(d.x + d.w), (float)(d.y + d.h) },
     };
     if (angle != 0)
     {
@@ -1554,10 +1561,10 @@ static void RenderImpl(R_Texture* texture, SDL_Rect* source, SDL_Rect* dest, dou
         }
         else
         {
-            c = { d.w / 2, d.h / 2 };
+            c = { (int)d.w / 2, (int)d.h / 2 };
         }
 
-        Vector2 rot = { d.x + (float)c.x, d.y + (float)c.y };
+        Vector2 rot = { (float)d.x + (float)c.x, (float)d.y + (float)c.y };
         float cos_theta = cosf((float)angle / 180 * 3.14159f);
         float sin_theta = sinf((float)angle / 180 * 3.14159f);
         for (Vector2& p : positions)
@@ -1623,7 +1630,7 @@ static void RenderImpl(R_Texture* texture, SDL_Rect* source, SDL_Rect* dest, dou
     glDrawArrays(GL_TRIANGLE_STRIP, 0, countof(vertices));
 }
 
-void R_RenderCopyEx(R_Texture* texture, SDL_Rect* source, SDL_Rect* dest, double angle, SDL_Point* center, SDL_RendererFlip flip)
+void R_RenderCopyEx(R_Texture* texture, R_Rect* source, R_Rect* dest, double angle, SDL_Point* center, SDL_RendererFlip flip)
 {
     if (texture == nullptr)
     {
@@ -1632,7 +1639,7 @@ void R_RenderCopyEx(R_Texture* texture, SDL_Rect* source, SDL_Rect* dest, double
     RenderImpl(texture, source, dest, angle, center, flip);
 }
 
-void R_RenderDrawLine(int x1, int y1, int x2, int y2)
+void R_RenderDrawLine(double x1, double y1, double x2, double y2)
 {
     Vector4 color = s_gl->current_render_color;
     Vertex vertices[2]; 
@@ -1652,12 +1659,12 @@ void R_RenderDrawLine(int x1, int y1, int x2, int y2)
     glDrawArrays(GL_LINES, 0, countof(vertices));
 }
 
-void R_RenderFillRect(SDL_Rect* rect)
+void R_RenderFillRect(R_Rect* rect)
 {
     RenderImpl(nullptr, 0, rect, 0, 0, SDL_FLIP_NONE);
 }
 
-void R_RenderDrawRect(SDL_Rect* rect)
+void R_RenderDrawRect(R_Rect* rect)
 {
     R_RenderDrawLine(rect->x,           rect->y,           rect->x + rect->w, rect->y);
     R_RenderDrawLine(rect->x + rect->w, rect->y,           rect->x + rect->w, rect->y + rect->h);
@@ -1679,3 +1686,13 @@ extern "C" {
 #endif
 }
 #endif
+
+void R_BeginWorldDrawing()
+{
+    s_gl->constants.c_mvp = s_gl->world_matrix;
+}
+
+void R_BeginUIDrawing()
+{
+    s_gl->constants.c_mvp = s_gl->ui_matrix;
+}

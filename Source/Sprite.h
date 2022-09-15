@@ -11,6 +11,7 @@ struct Image {
 	R_Texture*			texture = nullptr;
 	int					w = 0;
 	int					h = 0;
+	int					num_frames = 0;
 };
 
 struct Color {

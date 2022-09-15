@@ -71,7 +71,7 @@ void Spell::collision(Enemy* enemyTargeted) {
 						enemyTargeted->destroyed = true;
 						// totalEnemiesKilled += 1;
 						// Experience Orbs Vector
-						static Image experienceOrbImage = loadImage("Assets/Experience_Orb_1.png");
+						static Image experienceOrbImage = loadImage("Assets/Experience_Orb_1.png", 1);
 						ExperienceOrb experienceOrb = createExperienceOrb(experienceOrbImage,
 							enemyTargeted->position.x, enemyTargeted->position.y, Constants::EXPERIENCE_ORB_LIFETIME);
 						mGameData.experienceOrbs.push_back(experienceOrb);
@@ -92,35 +92,19 @@ void Spell::collision(Enemy* enemyTargeted) {
 
 void Spell::draw(GameData& gameData) {
 	Image* image = getImage(gameData);
-	SDL_Rect srcRect = {};
-	SDL_Rect destRect = {};
+	R_Rect srcRect = {};
+	R_Rect destRect = MakeRect(mPosition, image);
 
-	if (mFrames > 0) {
-		srcRect.w = image->w / mFrames;
+	int frames = this->getImage(gameData)->num_frames;
+	if (frames > 1) {
+		srcRect.w = image->w / frames;
 		srcRect.h = image->h;
 		Uint32 getTicks = SDL_GetTicks();
-		srcRect.x = srcRect.w * (int)((getTicks / 75) % mFrames);
-
-		destRect.w = srcRect.w;
-		destRect.h = srcRect.h;
-
-		destRect.x = (int)mPosition.x;
-		destRect.y = (int)mPosition.y;
-
-		destRect = convertCameraSpace(gameData.camera, destRect);
+		srcRect.x = srcRect.w * (int)((getTicks / 75) % frames);
 
 		R_RenderCopyEx(image->texture, &srcRect, &destRect, mAngle, NULL, SDL_FLIP_NONE);
-
 	}
 	else {
-		destRect.w = image->w;
-		destRect.h = image->h;
-
-		destRect.x = (int)mPosition.x;
-		destRect.y = (int)mPosition.y;
-
-		destRect = convertCameraSpace(gameData.camera, destRect);
-
 		R_RenderCopyEx(image->texture, NULL, &destRect, mAngle, NULL, SDL_FLIP_NONE);
 	}
 }
@@ -162,7 +146,7 @@ void SpikeSpell::setPosition(Vector position) {
 
 Image* SpikeSpell::getImage(GameData& gameData) {
 	REF(gameData);
-	static Image spellImage = loadImage("Assets/Weapon_Spike_2.png");
+	static Image spellImage = loadImage("Assets/Weapon_Spike_2.png", 1);
 	mRadius = returnSpriteSize(spellImage);
 	return &spellImage;
 }
@@ -194,7 +178,7 @@ void ShadowOrbSpell::setPosition(Vector position) {
 
 Image* ShadowOrbSpell::getImage(GameData& gameData) {
 	REF(gameData);
-	static Image spellImage = loadImage("Assets/Weapon_ShadowOrb_1.png");
+	static Image spellImage = loadImage("Assets/Weapon_ShadowOrb_1.png", 1);
 	mRadius = returnSpriteSize(spellImage);
 	return &spellImage;
 }
@@ -206,7 +190,7 @@ void ConsecratedGroundSpell::setPosition(Vector position) {
 
 Image* ConsecratedGroundSpell::getImage(GameData& gameData) {
     REF(gameData);
-	static Image spellImage = loadImage("Assets/Weapon_Consecrated_Ground_1.png");
+	static Image spellImage = loadImage("Assets/Weapon_Consecrated_Ground_1.png", 1);
 	mRadius = returnSpriteSize(spellImage);
 	return &spellImage;
 }
@@ -221,8 +205,7 @@ Image* FireballSpell::getImage(GameData& gameData) {
 	// "Assets/Fireball_Animated/Fireball_Animated_3_Final-Sheet.png"
 	// "Assets/Fireball_Animated/Fireball_Animated_4_Final-Sheet.png"
 	// "Assets/Fireball_Animated/Fireball_Animated_5_Final-Sheet.png"
-	mFrames = 7;
-	static Image spellImage = loadImage("Assets/Fireball_Animated/Fireball_Animated_5_Final-Sheet.png");
+	static Image spellImage = loadImage("Assets/Fireball_Animated/Fireball_Animated_5_Final-Sheet.png", 7);
 	return &spellImage;
 }
 
@@ -255,7 +238,7 @@ Image* FireAOESpell::getImage(GameData& gameData) {
     REF(gameData);
 	// "Assets/Weapon_Fireball_AOE_5.png"
 	// "Assets/Weapon_Fireball_AOE_6.png"
-	static Image spellImage = loadImage("Assets/Weapon_Fireball_AOE_6.png");
+	static Image spellImage = loadImage("Assets/Weapon_Fireball_AOE_6.png", 1);
 	mRadius = returnSpriteSize(spellImage);
 	return &spellImage;
 }
@@ -269,7 +252,7 @@ Image* MagicSwordSpell::getImage(GameData& gameData) {
     REF(gameData);
 	// "Assets/Weapon_Magic_Sword_2.png"
 	// "Assets/Weapon_Magic_Sword_3.png"
-	static Image spellImage = loadImage("Assets/Weapon_Magic_Sword_3.png");
+	static Image spellImage = loadImage("Assets/Weapon_Magic_Sword_3.png", 1);
 	mRadius = returnSpriteSize(spellImage);
 	return &spellImage;
 }

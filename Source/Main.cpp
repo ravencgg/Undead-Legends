@@ -100,36 +100,36 @@ int main(int argc, char** argv) {
     R_CreateRenderer(window);
 
 	// Maps Types
-	Image mapA = loadImage("Assets/Map_1.png");
+	Image mapA = loadImage("Assets/Map_1.png", 1);
 
 	// Player Types
-	Image characterSizeTest = loadImage("Assets/Character_Size_Test_1.png");
-	Image characterDemon = loadImage("Assets/Character_Demon_8.png");
-	Image characterDemonAnimated = loadImage("Assets/Character_Demon_2_Sprite_Sheet_2.png");
-	Image characterMaiden = loadImage("Assets/Character_Maiden_1.png");
-	Image characterGhoul = loadImage("Assets/Character_Ghoul_5.png");
-	Image characterVampireA = loadImage("Assets/Character_Vampire_4.png");
-	Image characterVampireB = loadImage("Assets/Character_Vampire_5_ShortHair.png");
-	Image characterFrankensteinCreation = loadImage("Assets/Character_FrankensteinCreation_1.png");
-	Image characterSkeleton = loadImage("Assets/Character_Skeleton_1.png");
+	Image characterSizeTest = loadImage("Assets/Character_Size_Test_1.png", 1);
+	Image characterDemon = loadImage("Assets/Character_Demon_8.png", 1);
+	Image characterDemonAnimated = loadImage("Assets/Character_Demon_2_Sprite_Sheet_2.png", 1);
+	Image characterMaiden = loadImage("Assets/Character_Maiden_1.png", 1);
+	Image characterGhoul = loadImage("Assets/Character_Ghoul_5.png", 1);
+	Image characterVampireA = loadImage("Assets/Character_Vampire_4.png", 1);
+	Image characterVampireB = loadImage("Assets/Character_Vampire_5_ShortHair.png", 1);
+	Image characterFrankensteinCreation = loadImage("Assets/Character_FrankensteinCreation_1.png", 1);
+	Image characterSkeleton = loadImage("Assets/Character_Skeleton_1.png", 1);
 	// "Assets/Character_Ice_Golem_1.png"
-	Image characterDemonTest = loadImage("Assets/Character_Demon_7.png");
+	Image characterDemonTest = loadImage("Assets/Character_Demon_7.png", 1);
 
-	Image characterIceGolem = loadImage("Assets/Character_Ice_Golem_3.png");
+	Image characterIceGolem = loadImage("Assets/Character_Ice_Golem_3.png", 1);
 	
 	// Enemy Types
 	// Image enemyBat = loadImage("Assets/Enemy_VampireBat_1.png");
-	Image enemyBatAnimated = loadImage("Assets/Enemy_VampireBat_1_SpriteSheet.png");
+	Image enemyBatAnimated = loadImage("Assets/Enemy_VampireBat_1_SpriteSheet.png", 2);
 	// Image enemyGargoyle = loadImage("Assets/Enemy_Gargoyle_1.png");
 	// Image enemyGargoyle = loadImage("Assets/Enemy_Gargoyle_1_Smaller.png");
-	Image enemyGargoyleAnimated = loadImage("Assets/Enemy_Gargoyle_1_Smaller_Sprite_Sheet.png"); 
-	Image enemyFlower = loadImage("Assets/Ememy_Flower_1.png");
+	Image enemyGargoyleAnimated = loadImage("Assets/Enemy_Gargoyle_1_Smaller_Sprite_Sheet.png", 2); 
+	Image enemyFlower = loadImage("Assets/Ememy_Flower_1.png", 1);
 	Image enemyType = {};
 	enemyType = enemyBatAnimated;
 
-	Image batDeathSpriteSheet = loadImage("Assets/Enemy_VampireBat_Death_Sprite-Sheet.png");
+	Image batDeathSpriteSheet = loadImage("Assets/Enemy_VampireBat_Death_Sprite-Sheet.png", 5);
 
-	Image experienceOrbImage = loadImage("Assets/Experience_Orb_1.png");
+	Image experienceOrbImage = loadImage("Assets/Experience_Orb_1.png", 1);
 	
 	int fontSize = 1;
 	// Image font = loadFont("Assets/Font_1.png");
@@ -137,21 +137,21 @@ int main(int argc, char** argv) {
 	Image font = loadFont("Assets/Font_3.png");
 
 	// Map Tiles
-	gameData.tileTypeArray[TILE_GRASS] = loadImage("Assets/grassTile.png");
-	gameData.tileTypeArray[TILE_DIRT] = loadImage("Assets/dirtTile.png");
-	gameData.tileTypeArray[TILE_ROCK] = loadImage("Assets/rockTile.png");
+	gameData.tileTypeArray[TILE_GRASS] = loadImage("Assets/grassTile.png", 1);
+	gameData.tileTypeArray[TILE_DIRT] = loadImage("Assets/dirtTile.png", 1);
+	gameData.tileTypeArray[TILE_ROCK] = loadImage("Assets/rockTile.png", 1);
 
-	createCharacter(gameData, characterDemon, 100, false, 300, 1);
+	createCharacter(gameData, characterDemon, 100, false, 300);
 	
 	gameData.player->position.x = Constants::RESOLUTION_X / 2;
 	gameData.player->position.y = Constants::RESOLUTION_Y / 2;
 
 	// Capping frame rate
-	const int FPS = 60;
+	const int FPS = 144;
 	// The max time between each frame
 	const int frameDelay = 1000 / FPS;
 	Uint32 frameStart;
-	int frameTime;
+	//int frameTime;
 
 	double lastFrameTime = getTime();
 
@@ -209,31 +209,31 @@ int main(int argc, char** argv) {
 
 				// Characters
 				case SDLK_1:
-					createCharacter(gameData, characterSizeTest, 100, false, 300, 1);
+					createCharacter(gameData, characterSizeTest, 100, false, 300);
 					break;
 				case SDLK_2:
-					createCharacter(gameData, characterIceGolem, 100, false, 300, 1);
+					createCharacter(gameData, characterIceGolem, 100, false, 300);
 					break;
 				case SDLK_3:
-					createCharacter(gameData, characterDemon, 100, false, 300, 1);
+					createCharacter(gameData, characterDemon, 100, false, 300);
 					break;
 				case SDLK_4:
-					createCharacter(gameData, characterVampireA, 100, false, 300, 1);
+					createCharacter(gameData, characterVampireA, 100, false, 300);
 					break;
 				case SDLK_5:
-					createCharacter(gameData, characterVampireB, 100, false, 300, 1);
+					createCharacter(gameData, characterVampireB, 100, false, 300);
 					break;
 				case SDLK_6:
-					createCharacter(gameData, characterFrankensteinCreation, 100, false, 300, 1);
+					createCharacter(gameData, characterFrankensteinCreation, 100, false, 300);
 					break;
 				case SDLK_7:
-					createCharacter(gameData, characterSkeleton, 100, false, 300, 1);
+					createCharacter(gameData, characterSkeleton, 100, false, 300);
 					break;
 				case SDLK_8:
-					createCharacter(gameData, characterMaiden, 100, false, 300, 1);
+					createCharacter(gameData, characterMaiden, 100, false, 300);
 					break;
 				case SDLK_9:
-					createCharacter(gameData, characterGhoul, 100, false, 300, 1);
+					createCharacter(gameData, characterGhoul, 100, false, 300);
 					break;
 
 				// Enemies
@@ -291,7 +291,7 @@ int main(int argc, char** argv) {
 		}
 		fireTime -= deltaTime;
 
-		double speed = 2;
+		double speed = 200.0 * deltaTime;
 
 		if (left) {
 			gameData.player->position.x -= speed;
@@ -319,10 +319,10 @@ int main(int argc, char** argv) {
 			enemyPosition.y += Constants::RESOLUTION_Y / 2;
 
 			if (animated) {
-				createEnemy(enemyType, enemyPosition, &gameData, 100, 2, true, 300, 2);
+				createEnemy(enemyType, enemyPosition, &gameData, 100, 2, true, 300);
 			}
 			else {
-				createEnemy(enemyType, enemyPosition, &gameData, 100, 2, false, 300, 0);
+				createEnemy(enemyType, enemyPosition, &gameData, 100, 2, false, 300);
 			}
 			/*
 			* // Degugging
@@ -431,10 +431,17 @@ int main(int argc, char** argv) {
 			}
 		}
 
-		gameData.camera.position = gameData.player->position;
+		gameData.camera.position = {};// gameData.player->position;
+		gameData.camera.size = { Constants::RESOLUTION_X, Constants::RESOLUTION_Y };
 
-		// Clear what we are drawing to
-		// Anything done before render clear gets erased
+        R_View view = {
+            gameData.camera.position.x,
+            gameData.camera.position.y,
+            gameData.camera.size.x,
+            gameData.camera.size.y
+        };
+		R_BeginFrame(view);
+		R_BeginWorldDrawing();
 		R_RenderClear();
 		R_RenderCopy(mapA.texture, NULL, NULL);
 
@@ -492,7 +499,7 @@ int main(int argc, char** argv) {
 				// drawCircle(renderer, enemy[i].sprite.position, enemy[i].radius);
 			}
 			else {
-				createDeathAnimation(batDeathSpriteSheet, gameData.enemies[i].position, gameData, 5, gameData.enemies[i].timesHit);
+				createDeathAnimation(batDeathSpriteSheet, gameData.enemies[i].position, gameData, gameData.enemies[i].timesHit);
 			}
 		}
 
@@ -525,6 +532,8 @@ int main(int argc, char** argv) {
 
 		// ***Player Interface***
 		// Experience tracker
+
+		R_BeginUIDrawing();
 		std::string experienceTracker = std::to_string(gameData.player->experience);
 		experienceTracker += std::string("/");
 		experienceTracker += std::to_string(gameData.player->levelUp);
@@ -548,7 +557,7 @@ int main(int argc, char** argv) {
 		// erase_if is going over every element and asking you if 
 		// you want it to be deleted
 
-		std::erase_if(gameData.enemies, [](const Enemy enemy) {
+		std::erase_if(gameData.enemies, [](const Enemy& enemy) {
 			if (enemy.destroyed) {
 				totalEnemiesKilled += 1;
 			}
@@ -556,8 +565,8 @@ int main(int argc, char** argv) {
 			}
 		);
 
-		std::erase_if(gameData.deathAnimations, [](const DeathAnimation deathAnimation) {
-			return deathAnimation.currentFrame >= deathAnimation.frames;
+		std::erase_if(gameData.deathAnimations, [](const DeathAnimation& deathAnimation) {
+			return deathAnimation.currentFrame >= deathAnimation.sprite.image.num_frames;
 			}
 		);
 
@@ -567,16 +576,17 @@ int main(int argc, char** argv) {
 		);
 
 
-		std::erase_if(gameData.damageNumbers, [](const DamageNumber damageNumber) {
+		std::erase_if(gameData.damageNumbers, [](const DamageNumber& damageNumber) {
 			return damageNumber.lifeTime <= 0;
 			}
 		);
 
-		std::erase_if(gameData.experienceOrbs, [](const ExperienceOrb experienceOrb) {
+		std::erase_if(gameData.experienceOrbs, [](const ExperienceOrb& experienceOrb) {
 			return experienceOrb.lifeTime <= 0;
 			}
 		);
 
+#if 0
 		// Calculate the frame time (Home much time it's 
 		// taken to get through the loop and update game
 		// objects...etc.
@@ -587,6 +597,7 @@ int main(int argc, char** argv) {
 		{
 			SDL_Delay(frameDelay - frameTime);
 		}
+#endif
 
 	}
 

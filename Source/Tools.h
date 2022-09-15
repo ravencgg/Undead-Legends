@@ -1,6 +1,10 @@
 #pragma once
 #include "Sprite.h"
 
+R_Rect MakeRect(Vector center, Vector size);
+R_Rect MakeRect(Vector center, Sprite* sprite);
+R_Rect MakeRect(Vector center, Image* image);
+
 double getTime();
 
 Vector facingDirection(double theta);
