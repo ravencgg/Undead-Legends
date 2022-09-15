@@ -26,7 +26,7 @@ double distancePlayer(Vector a, Vector b) {
 	return result;
 }
 
-Image loadImage(const char* fileName) {
+Image loadImage(const char* fileName, int frames) {
 	Image result;
 
 	int x, y, n;
@@ -52,6 +52,7 @@ Image loadImage(const char* fileName) {
 
 	R_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
 
+	result.num_frames = frames;
 	result.pixelData = data;
 	result.texture = texture;
 	result.w = x;
@@ -143,54 +144,12 @@ double sign(double value) {
 		return -1;
 }
 
-SDL_Rect convertCameraSpace(Camera& camera, SDL_Rect worldSpace) {
-	SDL_Rect cameraSpace;
-	cameraSpace.w = worldSpace.w;
-	cameraSpace.h = worldSpace.h;
-
-	Vector toCenter = { Constants::RESOLUTION_X / 2.0f, Constants::RESOLUTION_Y / 2.0f };
-
-	Vector worldSpaceV = { (double)worldSpace.x, (double)worldSpace.y };
-
-	// Entity <------------ Camera 
-	// worldSpaceV is the vector of the entity
-	Vector offset = worldSpaceV - camera.position;
-
-	offset = offset + toCenter;
-	cameraSpace.x = (int)offset.x - cameraSpace.w / 2;
-	cameraSpace.y = (int)offset.y - cameraSpace.h / 2;
-
-	return cameraSpace;
-}
-
-// W / H conversion not relevant to WS
-SDL_Rect convertCameraSpaceScreenWH(Camera& camera, SDL_Rect worldSpace) {
-	SDL_Rect cameraSpace = {};
-	// Converts the healthbar to the width and height of the screen
-	cameraSpace.w = worldSpace.w * (Constants::RESOLUTION_X / 1600);
-	cameraSpace.h = worldSpace.h * (Constants::RESOLUTION_Y / 900);
-
-	Vector toCenter = { Constants::RESOLUTION_X / 2.0f, Constants::RESOLUTION_Y / 2.0f };
-
-	Vector worldSpaceV = { (double)worldSpace.x, (double)worldSpace.y };
-
-	Vector offset = worldSpaceV - camera.position;
-
-	offset = offset + toCenter;
-
-	cameraSpace.x = (int)offset.x - cameraSpace.w / 2;
-	cameraSpace.y = (int)offset.y - cameraSpace.h / 2;
-
-	return cameraSpace;
-}
-
-
 void drawTile(GameData& gameData, Tile tile, float perlin) {
-	SDL_Rect rect;
-	rect.w = Constants::TILE_SIZE;
-	rect.h = Constants::TILE_SIZE;
-	rect.x = (int)tile.position.x;
-	rect.y = (int)tile.position.y;
+	R_Rect rect;
+	rect.w = (double)Constants::TILE_SIZE;
+	rect.h = (double)Constants::TILE_SIZE;
+	rect.x = tile.position.x;
+	rect.y = tile.position.y;
 
 	if (perlin > -0.1) {
 		tile.tileType = TILE_GRASS;
@@ -201,12 +160,12 @@ void drawTile(GameData& gameData, Tile tile, float perlin) {
 	else {
 		tile.tileType = TILE_ROCK;
 	}
-	rect = convertCameraSpace(gameData.camera, rect);
 
 	R_RenderCopyEx(gameData.tileTypeArray[tile.tileType].texture, NULL, &rect, 0, NULL, SDL_FLIP_NONE);
 }
 
 void drawCircle(GameData& gameData, Vector position, double radius, int circleOffsetY) {
+	REF(gameData);
 	// SDL talks in terms of degrees. We need radians.
 	const int NUMPOINTS = 24;
 	const double DELTA = (M_PI * 2) / NUMPOINTS;
@@ -220,23 +179,21 @@ void drawCircle(GameData& gameData, Vector position, double radius, int circleOf
 		double x2 = position.x + cos(DELTA * ((double)i + 1)) * radius;
 		double y2 = (position.y - circleOffsetY) + sin(DELTA * ((double)i + 1)) * radius;
 
-		SDL_Rect rectangle1 = {};
+		R_Rect rectangle1 = {};
 		rectangle1.x = (int)x1;
 		rectangle1.y = (int)y1;
-		rectangle1 = convertCameraSpace(gameData.camera, rectangle1);
 
-		SDL_Rect rectangle2 = {};
+		R_Rect rectangle2 = {};
 		rectangle2.x = (int)x2;
 		rectangle2.y = (int)y2;
-		rectangle2 = convertCameraSpace(gameData.camera, rectangle2);
 
 		R_RenderDrawLine(rectangle1.x, rectangle1.y, rectangle2.x, rectangle2.y);
 
 	}
 }
 
-void drawString(Color color, Image* textImage, int size, std::string string, int x, int y) {
-	SDL_Rect sourceRect = {};
+void drawString(Color color, Image* textImage, int size, std::string string, double x, double y) {
+	R_Rect sourceRect = {};
 	// Font 1
 	// int fontW = 7;
 	// int fontH = 9;
@@ -246,7 +203,7 @@ void drawString(Color color, Image* textImage, int size, std::string string, int
 	sourceRect.w = fontW;
 	sourceRect.h = fontH;
 	int stringSize = (int)string.size();
-	int spacing = 0;
+	double spacing = 0;
 
 	for (int i = 0; i < stringSize; i++) {
 		char glyph = string[i];
@@ -257,7 +214,7 @@ void drawString(Color color, Image* textImage, int size, std::string string, int
 		sourceRect.x = (col * fontW);
 		sourceRect.y = (row * fontH);
 
-		SDL_Rect destinationRect;
+		R_Rect destinationRect;
 
 		destinationRect.x = x + spacing;
 
@@ -269,15 +226,15 @@ void drawString(Color color, Image* textImage, int size, std::string string, int
 		R_SetTextureColorMod(textImage->texture, color.r, color.g, color.b);
 
 		R_RenderCopy(textImage->texture, &sourceRect, &destinationRect);
-		spacing += destinationRect.w;
+		spacing += floor(destinationRect.w);
 	}
 }
 
 void drawStringWorldSpace(Color color, GameData& gameData, Image* textImage, int size, std::string string, int x, int y) {
-	SDL_Rect destRect = {};
+    REF(gameData);
+	R_Rect destRect = {};
 	destRect.x = x;
 	destRect.y = y;
-	destRect = convertCameraSpace(gameData.camera, destRect);
 	drawString(color, textImage, size, string, destRect.x, destRect.y);
 }
 
@@ -377,12 +334,12 @@ void drawDamageNumber(GameData& gameData, DamageNumber& damageNumber, Image* tex
 		(int)damageNumber.position.x, (int)damageNumber.position.y);
 }
 
-void drawFilledRectangle(SDL_Rect* rect, int red, int green, int blue, int alpha) {
+void drawFilledRectangle(R_Rect* rect, int red, int green, int blue, int alpha) {
 	R_SetRenderDrawColor((Uint8)red, (Uint8)green, (Uint8)blue, (Uint8)alpha);
 	R_RenderFillRect(rect);
 }
 
-void drawNonFilledRectangle(SDL_Rect* rect, int red, int green, int blue, int alpha) {
+void drawNonFilledRectangle(R_Rect* rect, int red, int green, int blue, int alpha) {
 	R_SetRenderDrawColor((Uint8)red, (Uint8)green, (Uint8)blue, (Uint8)alpha);
 	R_RenderDrawRect(rect);
 }

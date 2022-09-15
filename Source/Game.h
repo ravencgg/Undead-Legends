@@ -47,6 +47,7 @@ class Spell;
 
 struct Camera {
 	Vector					position;
+	Vector					size;
 	// Viewing region (16:9) size;
 	// Figure out the window size every frame using the aspect ratio
 };
@@ -76,7 +77,7 @@ void myMemcpy(void* destination, void const* source, size_t size);
 
 double distancePlayer(Vector a, Vector b);
 
-Image loadImage(const char* fileName);
+Image loadImage(const char* fileName, int frames);
 
 Image loadFont(const char* fileName);
 
@@ -88,15 +89,11 @@ double ClosestRotation(double current, double target);
 
 double sign(double value);
 
-SDL_Rect convertCameraSpace(Camera& camera, SDL_Rect worldSpace);
-
-SDL_Rect convertCameraSpaceScreenWH(Camera& camera, SDL_Rect worldSpace);
-
 void drawTile(GameData& gameData, Tile tile, float perlin);
 
 void drawCircle(GameData& gameData, Vector position, double radius, int circleOffsetY);
 
-void drawString(Color color, Image* textImage, int size, std::string string, int x, int y);
+void drawString(Color color, Image* textImage, int size, std::string string, double x, double y);
 
 void drawStringWorldSpace(Color color, GameData& gameData, Image* textImage, int size, std::string string, int x, int y);
 
@@ -108,6 +105,6 @@ void playEnemyHitSound(GameData& gameData);
 
 void drawDamageNumber(GameData& gameData, DamageNumber& damageNumber, Image* textImage, double deltaTime);
 
-void drawFilledRectangle(SDL_Rect* rect, int red, int green, int blue, int alpha);
+void drawFilledRectangle(R_Rect* rect, int red, int green, int blue, int alpha);
 
-void drawNonFilledRectangle(SDL_Rect* rect, int red, int green, int blue, int alpha);
+void drawNonFilledRectangle(R_Rect* rect, int red, int green, int blue, int alpha);

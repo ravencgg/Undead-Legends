@@ -27,7 +27,6 @@ class Spell {
 		double					mAmmoAttackSpeed = 0.0;
 		
 		int						mSpellSpeed = 0;
-		int						mFrames = 0;
 
 		std::string				mSpellKey;
 		std::string				mEnemyHitKey;
