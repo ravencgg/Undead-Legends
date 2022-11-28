@@ -316,7 +316,7 @@ int main(int argc, char** argv) {
 
 		fireTime -= deltaTime;
 		
-		double speed = 2;
+		double speed = 20;
 
 		if (left) {
 			gameData.player.position.x -= speed;

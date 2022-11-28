@@ -430,9 +430,12 @@ void drawTilemap(Vector view_center, int view_width, int view_height)
 #define countof(__arr) (sizeof(__arr) / sizeof(__arr[0]))
 
     static Image image_layers[] = {
-        loadImage(nullptr, "Assets/grassTile.png"),
-        loadImage(nullptr, "Assets/dirtTile.png"),
-        loadImage(nullptr, "Assets/rockTile.png"),
+        loadImage(nullptr, "Assets/chris_temp/tile_light.jpeg"),
+        loadImage(nullptr, "Assets/chris_temp/tile_dark.png"),
+        loadImage(nullptr, "Assets/chris_temp/stone2.jpg"),
+        //loadImage(nullptr, "Assets/grassTile.png"),
+        //loadImage(nullptr, "Assets/dirtTile.png"),
+        //loadImage(nullptr, "Assets/rockTile.png"),
     };
     static R_Texture* textures[] = {
         image_layers[0].texture,

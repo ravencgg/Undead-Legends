@@ -163,10 +163,6 @@ struct GameData {
 	Image						tileTypeArray[TILE_COUNT];
 };
 
-struct Font {
-	
-};
-
 void myMemcpy(void* destination, void const* source, size_t size);
 
 Sprite createSprite(Image image);

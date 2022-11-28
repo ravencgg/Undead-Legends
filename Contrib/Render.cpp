@@ -651,10 +651,15 @@ void main()
     vec4 color_2 = texture(layer_two, f_uv);
 
     float noise = simplex_noise_normalized(vec3(f_uv / 5.0, 1.0));
-    noise = smoothstep(0.5, 0.6, noise);
+    noise = smoothstep(0.5, 0.8, noise);
+
+    float noise2 = max(simplex_noise_normalized(vec3(f_uv / 2.0, 0.2)),
+                       simplex_noise_normalized(vec3(f_uv / 2.0, 0.6)));
+    noise2 = smoothstep(0.7, 0.8, noise2);
 
     vec4 result = color_0;
-    result = color_1 * noise + color_0 * (1.0 - noise);
+    result = color_1 * noise  + color_0 * (1.0 - noise);
+    result = color_2 * noise2 + result * (1.0 - noise2);
 
 #if 0
     if (f_position.x < -0.3)
@@ -1845,7 +1850,8 @@ void R_RenderTileMap(int view_center_x, int view_center_y, int view_width, int v
         { 1.0f, 1.0f },
     };
 
-    float tile_size = 64.0f;
+
+    float tile_size = 192.0f;
     Vector2 uv_min = { (float)view_center_x - view_width / 2.0f, (float) view_center_y - view_height / 2.0f };
     uv_min.x /= tile_size;
     uv_min.y /= tile_size;
